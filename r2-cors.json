@@ -1,0 +1,8 @@
+[
+  {
+    "AllowedOrigins": ["https://YOUR-GITHUB-USERNAME.github.io"],
+    "AllowedMethods": ["GET", "HEAD"],
+    "AllowedHeaders": ["*"],
+    "MaxAgeSeconds": 3600
+  }
+]

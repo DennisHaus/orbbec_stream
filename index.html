@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Astra 2 snapshots</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #17242b;
+    --panel: rgba(34, 51, 59, 0.88);
+    --line: rgba(223, 233, 236, 0.14);
+    --text: #dfe9ec;
+    --muted: #8fa6ad;
+    --accent: #f2b134;
+    --accent-ink: #1d1503;
+    --ok: #5fd39a;
+    --bad: #ff7a6b;
+    --field: rgba(10, 20, 25, 0.45);
+    color-scheme: dark;
+    font-family: "Barlow", "Segoe UI", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #e4ecee;
+      --panel: rgba(255, 255, 255, 0.92);
+      --line: rgba(19, 37, 44, 0.14);
+      --text: #13252c;
+      --muted: #55707a;
+      --accent: #b9780a;
+      --accent-ink: #fff8ea;
+      --ok: #198a55;
+      --bad: #c23b2c;
+      --field: rgba(19, 37, 44, 0.06);
+      color-scheme: light;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); overflow: hidden; }
+  #scene { position: fixed; inset: 0; display: block; width: 100%; height: 100%; touch-action: none; }
+
+  .panel {
+    position: fixed;
+    left: max(16px, env(safe-area-inset-left));
+    bottom: max(16px, env(safe-area-inset-bottom));
+    width: min(380px, calc(100vw - 32px));
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+    background: var(--panel);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px 18px 18px;
+    font-size: 15px;
+    line-height: 1.4;
+  }
+  .head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .when {
+    font-family: "Barlow Semi Condensed", "Barlow", sans-serif;
+    font-weight: 600;
+    font-size: 30px;
+    line-height: 1.1;
+    letter-spacing: -0.005em;
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .sub { color: var(--muted); margin: 4px 0 0; min-height: 21px; }
+  .sub .tier { color: var(--text); }
+  .toggle { background: none; border: 0; color: var(--muted); font: inherit; cursor: pointer; padding: 4px 6px; border-radius: 6px; flex: none; }
+  .status { display: flex; align-items: center; gap: 8px; color: var(--muted); margin-top: 10px; font-size: 14px; }
+  .status:empty { display: none; }
+  .status.err { color: var(--bad); }
+
+  .timeline { margin-top: 14px; }
+  .timeline input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; }
+  .ends { display: flex; justify-content: space-between; color: var(--muted); font-size: 13px; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .nav { display: grid; grid-template-columns: 1fr 1fr 1.3fr 1fr; gap: 6px; margin-top: 10px; }
+
+  .row { display: flex; gap: 8px; }
+  input[type=text] {
+    flex: 1; min-width: 0; font: inherit; font-size: 14px; color: var(--text); background: var(--field);
+    border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px;
+  }
+  button { font: inherit; cursor: pointer; border-radius: 8px; }
+  button.primary { font-weight: 600; border: 0; padding: 8px 14px; background: var(--accent); color: var(--accent-ink); }
+  button.ghost { font-size: 14px; border: 1px solid var(--line); padding: 7px 10px; background: transparent; color: var(--text); }
+  button:disabled { opacity: 0.45; cursor: default; }
+  button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  details { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 10px; }
+  summary { cursor: pointer; color: var(--muted); font-size: 14px; }
+  details[open] summary { margin-bottom: 12px; }
+  .controls { display: grid; grid-template-columns: auto 1fr auto; gap: 10px 12px; align-items: center; }
+  .controls label { color: var(--muted); font-size: 14px; }
+  .controls output { font-variant-numeric: tabular-nums; font-size: 14px; min-width: 3.6em; text-align: right; }
+  .controls input[type=range] { width: 100%; accent-color: var(--accent); }
+  select {
+    grid-column: 2 / 4; font: inherit; font-size: 14px; color: var(--text); background: var(--field);
+    border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px;
+  }
+  .actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .hint { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+
+  .panel.collapsed .body { display: none; }
+
+  .empty { position: fixed; inset: 0; display: grid; place-items: center; pointer-events: none; padding: 24px; }
+  .empty p { max-width: 34ch; text-align: center; color: var(--muted); font-size: 17px; line-height: 1.5; margin: 0; }
+  .empty.hidden { display: none; }
+  @media (max-width: 520px) {
+    .panel { left: 12px; right: 12px; width: auto; bottom: max(12px, env(safe-area-inset-bottom)); max-height: 62vh; }
+    .when { font-size: 26px; }
+    .empty { align-items: start; padding-top: 14vh; }
+  }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div class="empty" id="empty"><p>Enter your R2 bucket’s public address below to browse its snapshots.</p></div>
+
+<section class="panel" id="panel" aria-label="Snapshot browser">
+  <div class="head">
+    <h1 class="when" id="when">Astra 2 snapshots</h1>
+    <button class="toggle" id="toggle" aria-expanded="true">Hide</button>
+  </div>
+  <p class="sub" id="sub">No bucket loaded</p>
+
+  <div class="body">
+    <div class="timeline" id="timeline" hidden>
+      <input type="range" id="slider" min="0" max="0" value="0" aria-label="Snapshot time">
+      <div class="ends"><span id="oldest"></span><span id="count"></span><span>now</span></div>
+      <div class="nav">
+        <button class="ghost" id="prev" aria-label="Older snapshot">Older</button>
+        <button class="ghost" id="next" aria-label="Newer snapshot">Newer</button>
+        <button class="ghost" id="play" aria-label="Play time-lapse">Play</button>
+        <button class="ghost" id="latest">Latest</button>
+      </div>
+    </div>
+
+    <details id="setup" open>
+      <summary>Bucket</summary>
+      <div class="row">
+        <input type="text" id="bucket" spellcheck="false" autocomplete="off" aria-label="Bucket public address" placeholder="https://pub-….r2.dev">
+        <button class="primary" id="load">Load</button>
+      </div>
+      <p class="hint">The bucket’s public URL from Cloudflare (R2 › your bucket › Settings › Public access).</p>
+    </details>
+
+    <details>
+      <summary>Display</summary>
+      <div class="controls">
+        <label for="size">Point size</label>
+        <input type="range" id="size" min="1" max="8" step="0.5" value="2">
+        <output id="sizeOut">2</output>
+
+        <label for="range">Max distance</label>
+        <input type="range" id="range" min="0.5" max="8" step="0.1" value="5">
+        <output id="rangeOut">5.0 m</output>
+
+        <label for="mode">Colour by</label>
+        <select id="mode">
+          <option value="depth">Distance from camera</option>
+          <option value="height">Height</option>
+          <option value="mono">Single colour</option>
+        </select>
+      </div>
+      <div class="actions">
+        <button class="ghost" id="resetView">Reset view</button>
+        <button class="ghost" id="savePly" disabled>Save this snapshot (.ply)</button>
+      </div>
+    </details>
+
+    <div class="status" id="status" role="status"></div>
+  </div>
+</section>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+const $ = (id) => document.getElementById(id);
+
+// ---------------------------------------------------------------- scene
+const renderer = new THREE.WebGLRenderer({ canvas: $("scene"), antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, 1, 0.01, 100);
+const controls = new OrbitControls(camera, $("scene"));
+controls.enableDamping = true;
+function resetView() {
+  camera.position.set(1.1, 0.7, 1.0);
+  controls.target.set(0, 0, -2);
+  controls.update();
+}
+resetView();
+
+const grid = new THREE.GridHelper(8, 16, 0x6f8a92, 0x6f8a92);
+grid.material.transparent = true; grid.material.opacity = 0.18;
+grid.position.set(0, -1.2, -3);
+scene.add(grid);
+scene.add(new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.03, 0.03), new THREE.MeshBasicMaterial({ color: 0xf2b134, wireframe: true })));
+
+let capacity = 0;
+const geometry = new THREE.BufferGeometry();
+const material = new THREE.PointsMaterial({ size: 2, sizeAttenuation: false, vertexColors: true });
+const cloud = new THREE.Points(geometry, material);
+cloud.frustumCulled = false;
+scene.add(cloud);
+
+function ensureCapacity(n) {
+  if (n <= capacity) return;
+  capacity = n;
+  geometry.setAttribute("position", new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+  geometry.setAttribute("color", new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+}
+function resize() {
+  renderer.setSize(innerWidth, innerHeight, false);
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+}
+addEventListener("resize", resize);
+resize();
+renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
+
+// Turbo colormap (polynomial approximation, Google, Apache-2.0).
+function turbo(t, out, i) {
+  t = Math.min(1, Math.max(0, t));
+  const t2 = t * t, t3 = t2 * t, t4 = t3 * t, t5 = t4 * t;
+  out[i]     = Math.min(1, Math.max(0, 0.13572138 + 4.61539260 * t - 42.66032258 * t2 + 132.13108234 * t3 - 152.94239396 * t4 + 59.28637943 * t5));
+  out[i + 1] = Math.min(1, Math.max(0, 0.09140261 + 2.19418839 * t + 4.84296658 * t2 - 14.18503333 * t3 + 4.27729857 * t4 + 2.82956604 * t5));
+  out[i + 2] = Math.min(1, Math.max(0, 0.10667330 + 12.64194608 * t - 60.58204836 * t2 + 110.36276771 * t3 - 89.90310912 * t4 + 27.34824973 * t5));
+}
+
+// ---------------------------------------------------------------- snapshot decoding
+async function inflate(bytes) {
+  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate"));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+async function decode(buf) {
+  const dv = new DataView(buf);
+  const magic = String.fromCharCode(...new Uint8Array(buf, 0, 4));
+  if (magic !== "ODP1") throw new Error("This file isn’t a snapshot from the Orbbec snapshotter.");
+  const f = {
+    w: dv.getUint16(4, true), h: dv.getUint16(6, true),
+    fx: dv.getFloat32(8, true), fy: dv.getFloat32(12, true),
+    cx: dv.getFloat32(16, true), cy: dv.getFloat32(20, true),
+    scale: dv.getFloat32(24, true), flags: dv.getUint8(28),
+  };
+  let payload = new Uint8Array(buf, 32);
+  if (f.flags & 1) payload = await inflate(payload);
+  const aligned = new Uint8Array(payload.byteLength); aligned.set(payload);
+  f.depth = new Uint16Array(aligned.buffer, 0, f.w * f.h);
+  return f;
+}
+
+function buildCloud(f) {
+  const { w, h, fx, fy, cx, cy, scale, depth } = f;
+  ensureCapacity(w * h);
+  const pos = geometry.attributes.position.array, col = geometry.attributes.color.array;
+  const maxM = parseFloat($("range").value), mode = $("mode").value, k = scale / 1000;
+  let n = 0;
+  for (let v = 0; v < h; v++) {
+    for (let u = 0; u < w; u++) {
+      const d = depth[v * w + u];
+      if (d === 0) continue;
+      const z = d * k;
+      if (z > maxM) continue;
+      const j = n * 3;
+      pos[j] = (u - cx) * z / fx;
+      pos[j + 1] = -(v - cy) * z / fy;
+      pos[j + 2] = -z;
+      n++;
+    }
+  }
+  if (mode === "mono") {
+    const c = new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue("--accent").trim());
+    for (let i = 0; i < n * 3; i += 3) { col[i] = c.r; col[i + 1] = c.g; col[i + 2] = c.b; }
+  } else if (mode === "height") {
+    for (let i = 0; i < n * 3; i += 3) turbo((pos[i + 1] + 1.2) / 2.4, col, i);
+  } else {
+    for (let i = 0; i < n * 3; i += 3) turbo(1 - (-pos[i + 2]) / maxM, col, i);
+  }
+  geometry.setDrawRange(0, n);
+  geometry.attributes.position.needsUpdate = true;
+  geometry.attributes.color.needsUpdate = true;
+  return n;
+}
+
+// ---------------------------------------------------------------- bucket + timeline
+let base = "", snaps = [], current = -1, shown = null, playing = null;
+const cache = new Map(); // key -> Promise<frame>, small LRU
+
+function setStatus(text, isError = false) {
+  $("status").textContent = text;
+  $("status").classList.toggle("err", isError);
+}
+
+function getFrame(key) {
+  if (cache.has(key)) {
+    const p = cache.get(key); cache.delete(key); cache.set(key, p); return p;
+  }
+  const p = fetch(`${base}/${key}`).then((r) => {
+    if (!r.ok) throw new Error(`Snapshot missing from bucket (HTTP ${r.status}). It may have just been thinned out.`);
+    return r.arrayBuffer();
+  }).then(decode);
+  p.catch(() => cache.delete(key));
+  cache.set(key, p);
+  while (cache.size > 40) cache.delete(cache.keys().next().value);
+  return p;
+}
+
+const fmtWhen = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+const fmtDay = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" });
+function ago(sec) {
+  const m = Math.round(sec / 60);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m} min ago`;
+  const h = Math.round(m / 60);
+  if (h < 48) return `${h} h ago`;
+  return `${Math.round(h / 24)} days ago`;
+}
+function tierFor(ageSec) {
+  const d = ageSec / 86400;
+  if (d < 1) return "every snapshot kept";
+  if (d < 7) return "hourly snapshot";
+  if (d < 30) return "daily snapshot";
+  return "weekly snapshot";
+}
+
+async function show(i) {
+  if (!snaps.length) return;
+  i = Math.max(0, Math.min(snaps.length - 1, i));
+  current = i;
+  const s = snaps[i];
+  $("slider").value = i;
+  $("when").textContent = fmtWhen.format(new Date(s.t * 1000));
+  const age = Date.now() / 1000 - s.t;
+  $("sub").innerHTML = "";
+  $("sub").append(`${ago(age)}, `, Object.assign(document.createElement("span"), { className: "tier", textContent: tierFor(age) }));
+  $("prev").disabled = i === 0;
+  $("next").disabled = i === snaps.length - 1;
+  $("latest").disabled = i === snaps.length - 1;
+  try {
+    const f = await getFrame(s.key);
+    if (current !== i) return; // user moved on while this loaded
+    shown = f;
+    const n = buildCloud(f);
+    $("empty").classList.add("hidden");
+    $("savePly").disabled = false;
+    setStatus(`${n.toLocaleString()} points, ${f.w}×${f.h} depth`);
+    if (i + 1 < snaps.length) getFrame(snaps[i + 1].key).catch(() => {}); // preload neighbours
+    if (i > 0) getFrame(snaps[i - 1].key).catch(() => {});
+  } catch (err) {
+    setStatus(err.message, true);
+  }
+}
+
+async function loadIndex({ quiet = false } = {}) {
+  try {
+    const r = await fetch(`${base}/index.json`, { cache: "no-cache" });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const doc = await r.json();
+    const wasLatest = current === snaps.length - 1;
+    const prevKey = snaps[current]?.key;
+    snaps = doc.snapshots || [];
+    if (!snaps.length) {
+      setStatus("The bucket has no snapshots yet. Start the snapshotter on the camera PC.", true);
+      return;
+    }
+    $("timeline").hidden = false;
+    $("setup").open = false;
+    $("slider").max = snaps.length - 1;
+    $("oldest").textContent = fmtDay.format(new Date(snaps[0].t * 1000));
+    $("count").textContent = `${snaps.length.toLocaleString()} snapshots`;
+    if (current < 0 || wasLatest || current >= snaps.length) show(snaps.length - 1);
+    else {
+      // Keep the same snapshot selected even though thinning may shift positions.
+      const same = snaps.findIndex((s) => s.key === prevKey);
+      if (same >= 0) { current = same; $("slider").value = same; }
+      else show(Math.min(current, snaps.length - 1));
+    }
+  } catch (err) {
+    if (quiet) return;
+    setStatus("Couldn’t load index.json from that address. Check the bucket’s public URL and its CORS rule (see the README).", true);
+    $("setup").open = true;
+  }
+}
+
+function load() {
+  base = $("bucket").value.trim().replace(/\/+$/, "");
+  if (!base) return;
+  if (!/^https?:\/\//.test(base)) base = "https://" + base;
+  try { localStorage.setItem("orbbec-bucket", base); } catch {}
+  cache.clear(); snaps = []; current = -1; shown = null;
+  setStatus("Loading snapshot list…");
+  loadIndex();
+}
+
+function stopPlay() {
+  clearInterval(playing); playing = null;
+  $("play").textContent = "Play";
+}
+function togglePlay() {
+  if (playing) return stopPlay();
+  if (current >= snaps.length - 1) show(0);
+  $("play").textContent = "Pause";
+  playing = setInterval(() => {
+    if (current >= snaps.length - 1) return stopPlay();
+    show(current + 1);
+  }, 450);
+}
+
+// ---------------------------------------------------------------- wiring
+const params = new URLSearchParams(location.search);
+let saved = null;
+try { saved = localStorage.getItem("orbbec-bucket"); } catch {}
+$("bucket").value = params.get("bucket") || saved || "";
+
+$("load").onclick = load;
+$("bucket").onkeydown = (e) => { if (e.key === "Enter") load(); };
+$("slider").oninput = () => { stopPlay(); show(+$("slider").value); };
+$("prev").onclick = () => { stopPlay(); show(current - 1); };
+$("next").onclick = () => { stopPlay(); show(current + 1); };
+$("latest").onclick = () => { stopPlay(); show(snaps.length - 1); };
+$("play").onclick = togglePlay;
+addEventListener("keydown", (e) => {
+  if (e.target.closest("input[type=text], select")) return;
+  if (e.key === "ArrowLeft") { stopPlay(); show(current - 1); }
+  if (e.key === "ArrowRight") { stopPlay(); show(current + 1); }
+  if (e.key === " " && snaps.length) { e.preventDefault(); togglePlay(); }
+});
+
+$("size").oninput = () => { material.size = +$("size").value; $("sizeOut").textContent = $("size").value; };
+$("range").oninput = () => { $("rangeOut").textContent = (+$("range").value).toFixed(1) + " m"; if (shown) buildCloud(shown); };
+$("mode").onchange = () => shown && buildCloud(shown);
+$("resetView").onclick = resetView;
+$("toggle").onclick = () => {
+  const collapsed = $("panel").classList.toggle("collapsed");
+  $("toggle").textContent = collapsed ? "Show" : "Hide";
+  $("toggle").setAttribute("aria-expanded", String(!collapsed));
+};
+$("savePly").onclick = () => {
+  const n = geometry.drawRange.count, pos = geometry.attributes.position.array;
+  const lines = ["ply", "format ascii 1.0", `element vertex ${n}`, "property float x", "property float y", "property float z", "end_header"];
+  for (let i = 0; i < n * 3; i += 3) lines.push(`${pos[i].toFixed(4)} ${pos[i + 1].toFixed(4)} ${pos[i + 2].toFixed(4)}`);
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([lines.join("\n")], { type: "text/plain" }));
+  a.download = snaps[current].key.split("/").pop().replace(".odp", ".ply");
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+
+// Check for new snapshots every minute.
+setInterval(() => { if (base && !playing) loadIndex({ quiet: true }); }, 60000);
+
+if ($("bucket").value) load();
+</script>
+</body>
+</html>
