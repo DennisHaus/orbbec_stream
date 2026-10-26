@@ -8,6 +8,8 @@ if not defined R2_ACCESS_KEY_ID (
 )
 set "PY=%ORBBEC_PYTHON%"
 if not defined PY set "PY=python"
-echo Taking a snapshot every 15 minutes. Close this window to stop.
+echo Taking a snapshot now and then every 15 minutes.
+echo Press Enter in this window for an extra snapshot. Close the window to stop.
+echo.
 "%PY%" snapshotter.py --interval 15
 pause

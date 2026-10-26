@@ -4,10 +4,13 @@
 Astra 2 ──USB──> snapshotter.py (Windows PC) ──upload──> R2 bucket ──read──> viewer (GitHub Pages)
 ```
 
-Every 15 minutes (on the quarter hour) the PC captures a colour point cloud: a depth
-snapshot (the median of 10 frames,
-so it's cleaner than a single frame) aligned to the colour camera, plus a JPEG photo
-whose pixels line up with the depth. Both go to R2, and old ones are thinned out:
+Every 15 minutes (on the quarter hour) the PC captures a colour point cloud at the
+camera's full depth resolution: a depth snapshot (the median of 10 frames, so it's
+cleaner than a single frame) plus a JPEG of the colour image mapped onto the depth
+image, so every depth point gets its colour. The script uses the largest depth mode
+the camera accepts; if Windows refuses a combination, it tries a smaller colour mode
+first and only then a smaller depth mode. Both files go to R2, and old ones are
+thinned out:
 
 | Age              | Kept                 |
 |------------------|----------------------|
@@ -40,14 +43,17 @@ about 23 daily), plus one per week after that.
 3. Close Orbbec Viewer if it's open (only one program can use the camera),
    plug the Astra 2 into a USB 3 port and double-click **run_snapshots.bat**.
 
+**Extra snapshot right away:** press Enter in the run_snapshots window, or
+double-click **snapshot_now.bat**. The 15-minute schedule carries on as before.
+
 To change keys later, just run setup.bat again.
 
 **Keep it running after restarts:** Task Scheduler › Create Task › Triggers: *At log on*
 › Actions: start `run_snapshots.bat` › Conditions: untick "Start only if on AC power".
 In Power settings set *Sleep* to *Never*, or the PC will stop taking snapshots.
 
-Options: `--frames 10` (frames per snapshot), `--step 2` (keep every 2nd pixel;
-default is automatic, about 640 points across), `--width 800 --height 600` (pick a
+Options: `--frames 10` (frames per snapshot), `--step 2` (keep every 2nd pixel,
+a quarter of the points; default 1 = all), `--width 800 --height 600` (force a
 depth mode), `--no-color` (depth only, no photo).
 
 ## 3. Host the viewer on GitHub Pages
@@ -79,7 +85,7 @@ Keys: ← → step through time, space plays, W / E switch between move and rota
 ## Cost
 R2's free tier is 10 GB storage, 1 million writes and 10 million reads a month,
 with free downloads. At 15-minute captures this uses about 6,000 writes a month
-and a few hundred MB of storage with colour, so it should stay free. Deletes are free.
+and roughly 0.5–1 GB of storage at full resolution with colour, so it should stay free. Deletes are free.
 
 ## Files in the bucket
 - `index.json` — list of snapshots (key, time, size), rewritten after every capture

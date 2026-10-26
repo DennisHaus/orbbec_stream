@@ -433,7 +433,9 @@ function buildCloud(f) {
       if (Z < z0) z0 = Z; if (Z > z1) z1 = Z;
       if (useCam) {
         const ci = (row + Math.min(cw - 1, Math.floor(u * sx))) * 4;
-        col[j] = SRGB_TO_LINEAR[rgb[ci]]; col[j + 1] = SRGB_TO_LINEAR[rgb[ci + 1]]; col[j + 2] = SRGB_TO_LINEAR[rgb[ci + 2]];
+        const r = rgb[ci], g = rgb[ci + 1], bl = rgb[ci + 2];
+        if (r + g + bl < 6) { col[j] = col[j + 1] = col[j + 2] = 0.18; } // outside the colour camera's view
+        else { col[j] = SRGB_TO_LINEAR[r]; col[j + 1] = SRGB_TO_LINEAR[g]; col[j + 2] = SRGB_TO_LINEAR[bl]; }
       }
       n++;
     }
@@ -1048,7 +1050,7 @@ function getFrame(key) {
   const p = Promise.all([depthP, colorP]).then(([f, c]) => (c ? Object.assign(f, c) : f));
   p.catch(() => cache.delete(key));
   cache.set(key, p);
-  while (cache.size > 40) cache.delete(cache.keys().next().value);
+  while (cache.size > 8) cache.delete(cache.keys().next().value); // full-resolution frames are large
   return p;
 }
 

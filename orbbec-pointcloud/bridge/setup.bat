@@ -10,7 +10,7 @@ echo.
 
 rem ---- find Python: the "orbbec" conda environment first, then Anaconda base, then PATH ----
 set "PY="
-for %%P in ("%USERPROFILE%\anaconda3\envs\orbbec\python.exe" "%USERPROFILE%\miniconda3\envs\orbbec\python.exe" "%ProgramData%\anaconda3\envs\orbbec\python.exe" "%USERPROFILE%\anaconda3\python.exe" "%USERPROFILE%\miniconda3\python.exe" "%LOCALAPPDATA%\anaconda3\python.exe" "%ProgramData%\anaconda3\python.exe" "%ProgramData%\miniconda3\python.exe") do (
+for %%P in ("%USERPROFILE%\.conda\envs\orbbec\python.exe" "%USERPROFILE%\anaconda3\envs\orbbec\python.exe" "%USERPROFILE%\miniconda3\envs\orbbec\python.exe" "%ProgramData%\anaconda3\envs\orbbec\python.exe" "%USERPROFILE%\anaconda3\python.exe" "%USERPROFILE%\miniconda3\python.exe" "%LOCALAPPDATA%\anaconda3\python.exe" "%ProgramData%\anaconda3\python.exe" "%ProgramData%\miniconda3\python.exe") do (
   if not defined PY if exist "%%~P" set "PY=%%~P"
 )
 if not defined PY for /f "delims=" %%P in ('where python 2^>nul ^| findstr /v /i "WindowsApps"') do (
