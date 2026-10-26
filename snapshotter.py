@@ -16,6 +16,10 @@ R2 credentials come from environment variables (see run_snapshots.bat):
 Test without a camera or R2:
     python snapshotter.py --mock --local ./test-bucket --once
 
+Each snapshot is a depth file (.odp) plus, when the colour camera is used, a
+.jpg with the same name whose pixels line up with the depth pixels (the depth
+is aligned to the colour camera; the .jpg may be a larger multiple of the size).
+
 Snapshot file format (.odp, little-endian):
   0   4s   magic b"ODP1"
   4   u16  width          6  u16 height
@@ -76,37 +80,142 @@ def median_depth(frames):
     return np.nan_to_num(med, nan=0).astype(np.uint16)
 
 
-def capture_orbbec(n_frames, warmup, width=None, height=None):
-    """Open the camera, grab n_frames after warm-up, close it again."""
-    from pyorbbecsdk import Config, OBSensorType, Pipeline
+def color_to_jpeg(frame, quality=85):
+    """Turn an Orbbec colour frame into JPEG bytes (MJPG frames already are JPEG)."""
+    from pyorbbecsdk import OBFormat
+    fmt = frame.get_format()
+    w, h = frame.get_width(), frame.get_height()
+    data = np.asarray(frame.get_data(), dtype=np.uint8)
+    if fmt == OBFormat.MJPG:
+        return data.tobytes()
+    if fmt == OBFormat.RGB:
+        rgb = data.reshape(h, w, 3)
+    elif fmt == OBFormat.BGR:
+        rgb = data.reshape(h, w, 3)[:, :, ::-1]
+    elif fmt in (OBFormat.YUYV, OBFormat.UYVY):
+        rgb = yuv422_to_rgb(data.reshape(h, w, 2), uyvy=(fmt == OBFormat.UYVY))
+    else:
+        raise RuntimeError(f"colour format {fmt} is not supported")
+    return rgb_to_jpeg(rgb, quality)
+
+
+def yuv422_to_rgb(yuv, uyvy=False):
+    yuv = yuv.astype(np.float32)
+    if uyvy:
+        y = yuv[:, :, 1]
+        u = np.repeat(yuv[:, 0::2, 0], 2, axis=1)
+        v = np.repeat(yuv[:, 1::2, 0], 2, axis=1)
+    else:
+        y = yuv[:, :, 0]
+        u = np.repeat(yuv[:, 0::2, 1], 2, axis=1)
+        v = np.repeat(yuv[:, 1::2, 1], 2, axis=1)
+    u, v = u - 128, v - 128
+    rgb = np.stack([y + 1.402 * v, y - 0.344 * u - 0.714 * v, y + 1.772 * u], axis=2)
+    return np.clip(rgb, 0, 255).astype(np.uint8)
+
+
+def rgb_to_jpeg(rgb, quality=85):
+    import io
+    from PIL import Image
+    buf = io.BytesIO()
+    Image.fromarray(np.ascontiguousarray(rgb)).save(buf, format="JPEG", quality=quality)
+    return buf.getvalue()
+
+
+def _pick_profile(profiles, candidates):
+    for args in candidates:
+        try:
+            p = profiles.get_video_stream_profile(*args)
+            if p is not None:
+                return p
+        except Exception:
+            pass
+    return profiles.get_default_video_stream_profile()
+
+
+def _intrinsics(frame, fallback):
+    """Intrinsics of the (possibly aligned) frame, else the given fallback."""
+    try:
+        p = frame.get_stream_profile().as_video_stream_profile().get_intrinsic()
+        if p.fx > 0:
+            return (p.fx, p.fy, p.cx, p.cy)
+    except Exception:
+        pass
+    return fallback
+
+
+def capture_orbbec(n_frames, warmup, width=None, height=None, color=True):
+    """Open the camera, grab n_frames after warm-up, close it again.
+
+    With color=True the depth is aligned to the colour camera, so every depth
+    pixel has a matching colour pixel. Returns (depth, scale, intrinsics, jpeg).
+    """
+    from pyorbbecsdk import Config, OBFormat, OBSensorType, Pipeline
 
     pipeline = Pipeline()
     config = Config()
-    profiles = pipeline.get_stream_profile_list(OBSensorType.DEPTH_SENSOR)
-    profile = None
-    if width and height:
+    depth_profiles = pipeline.get_stream_profile_list(OBSensorType.DEPTH_SENSOR)
+    want = [(width, height, OBFormat.Y16, 30)] if width and height else []
+    depth_profile = _pick_profile(depth_profiles, want)
+    config.enable_stream(depth_profile)
+
+    align = None
+    color_profile = None
+    if color:
         try:
-            from pyorbbecsdk import OBFormat
-            profile = profiles.get_video_stream_profile(width, height, OBFormat.Y16, 30)
+            from pyorbbecsdk import AlignFilter, OBStreamType
+            color_profiles = pipeline.get_stream_profile_list(OBSensorType.COLOR_SENSOR)
+            color_profile = _pick_profile(color_profiles, [
+                (1280, 0, OBFormat.MJPG, 30), (1280, 0, OBFormat.RGB, 30),
+                (640, 0, OBFormat.MJPG, 30), (640, 0, OBFormat.RGB, 30),
+            ])
+            config.enable_stream(color_profile)
+            try:
+                from pyorbbecsdk import OBFrameAggregateOutputMode
+                config.set_frame_aggregate_output_mode(OBFrameAggregateOutputMode.FULL_FRAME_REQUIRE)
+            except Exception:
+                pass
+            align = AlignFilter(align_to_stream=OBStreamType.COLOR_STREAM)
         except Exception as exc:
-            log(f"requested {width}x{height} not available ({exc}); using default")
-    if profile is None:
-        profile = profiles.get_default_video_stream_profile()
-    config.enable_stream(profile)
+            log(f"colour camera not available ({exc}); saving depth only")
+            color_profile, align = None, None
+
+    if align is not None:
+        try:
+            pipeline.enable_frame_sync()
+        except Exception:
+            pass
     pipeline.start(config)
     try:
-        try:
-            p = pipeline.get_camera_param().depth_intrinsic
-            intr = (p.fx, p.fy, p.cx, p.cy)
-        except Exception:
-            intr = fov_intrinsics(profile.get_width(), profile.get_height())
+        if align is not None:
+            try:
+                p = pipeline.get_camera_param().rgb_intrinsic
+                fallback = (p.fx, p.fy, p.cx, p.cy)
+            except Exception:
+                fallback = fov_intrinsics(color_profile.get_width(), color_profile.get_height(), 86.0, 55.0)
+        else:
+            try:
+                p = pipeline.get_camera_param().depth_intrinsic
+                fallback = (p.fx, p.fy, p.cx, p.cy)
+            except Exception:
+                fallback = fov_intrinsics(depth_profile.get_width(), depth_profile.get_height())
 
         frames, scale, got, deadline = [], 1.0, 0, time.time() + 30
+        last_color, intr = None, fallback
         while len(frames) < n_frames:
             if time.time() > deadline:
-                raise RuntimeError("camera sent no depth frames for 30 s")
+                raise RuntimeError("camera sent no usable frames for 30 s")
             fs = pipeline.wait_for_frames(500)
-            d = fs.get_depth_frame() if fs is not None else None
+            if fs is None:
+                continue
+            if align is not None:
+                if fs.get_color_frame() is None or fs.get_depth_frame() is None:
+                    continue
+                fs = align.process(fs)
+                if fs is None:
+                    continue
+                fs = fs.as_frame_set()
+            d = fs.get_depth_frame()
             if d is None:
                 continue
             got += 1
@@ -115,12 +224,23 @@ def capture_orbbec(n_frames, warmup, width=None, height=None):
             w, h = d.get_width(), d.get_height()
             frames.append(np.frombuffer(d.get_data(), dtype=np.uint16).reshape(h, w).copy())
             scale = float(d.get_depth_scale())
-        return median_depth(frames), scale, intr
+            if align is not None:
+                last_color = fs.get_color_frame()
+                if len(frames) == 1:
+                    intr = _intrinsics(d, fallback)
+
+        jpeg = None
+        if last_color is not None:
+            try:
+                jpeg = color_to_jpeg(last_color)
+            except Exception as exc:
+                log(f"could not save colour ({exc}); saving depth only")
+        return median_depth(frames), scale, intr, jpeg
     finally:
         pipeline.stop()
 
 
-def capture_mock(t, w=640, h=480):
+def capture_mock(t, w=640, h=480, color=True):
     """Synthetic scene that changes with time, for testing."""
     yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
     nx, ny = (xx / w - 0.5) * 2, (yy / h - 0.5) * 2
@@ -131,7 +251,18 @@ def capture_mock(t, w=640, h=480):
     r2 = (nx - bx) ** 2 + (ny - by) ** 2
     box = np.where(r2 < 0.06, 1400 - 1500 * np.sqrt(np.clip(0.06 - r2, 0, None)), np.inf)
     depth = np.minimum(np.minimum(wall, floor), box)
-    return depth.astype(np.uint16), 1.0, fov_intrinsics(w, h)
+    jpeg = None
+    if color:
+        # Colour image at twice the depth size, like a real colour camera.
+        cy, cx = np.mgrid[0:h * 2, 0:w * 2].astype(np.float32)
+        stripes = ((cx // 40 + cy // 40) % 2) * 40
+        rgb = np.stack([150 + stripes + 0 * cy, 120 + 0.1 * cy, 90 + 0.12 * cx], axis=2)
+        rnx, rny = (cx / (w * 2) - 0.5) * 2, (cy / (h * 2) - 0.5) * 2
+        ball = ((rnx - bx) ** 2 + (rny - by) ** 2) < 0.06
+        rgb[ball] = [220, 60, 50]
+        rgb[rny > 0.35] = [90, 140, 80]
+        jpeg = rgb_to_jpeg(np.clip(rgb, 0, 255).astype(np.uint8))
+    return depth.astype(np.uint16), 1.0, fov_intrinsics(w, h), jpeg
 
 
 def encode(depth, scale, intr, compress=6):
@@ -198,7 +329,7 @@ class LocalStore:
 
     def list(self, prefix):
         base = self.root / prefix
-        return [str(p.relative_to(self.root)).replace("\\", "/") for p in base.rglob("*.odp")] if base.exists() else []
+        return [str(p.relative_to(self.root)).replace("\\", "/") for p in base.rglob("*") if p.is_file()] if base.exists() else []
 
 
 class R2Store:
@@ -207,12 +338,13 @@ class R2Store:
         missing = [v for v in ("R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET") if not os.environ.get(v)]
         if missing:
             sys.exit(f"Missing environment variables: {', '.join(missing)} (see run_snapshots.bat)")
-        self.bucket = os.environ["R2_BUCKET"]
+        env = lambda k: os.environ[k].strip().strip('"')
+        self.bucket = env("R2_BUCKET")
         self.s3 = boto3.client(
             "s3",
-            endpoint_url=f"https://{os.environ['R2_ACCOUNT_ID']}.r2.cloudflarestorage.com",
-            aws_access_key_id=os.environ["R2_ACCESS_KEY_ID"],
-            aws_secret_access_key=os.environ["R2_SECRET_ACCESS_KEY"],
+            endpoint_url=f"https://{env('R2_ACCOUNT_ID')}.r2.cloudflarestorage.com",
+            aws_access_key_id=env("R2_ACCESS_KEY_ID"),
+            aws_secret_access_key=env("R2_SECRET_ACCESS_KEY"),
             region_name="auto",
         )
 
@@ -244,6 +376,16 @@ class R2Store:
             token = r["NextContinuationToken"]
 
 
+def files_of(entries):
+    """All bucket keys belonging to these snapshots (depth + optional colour)."""
+    out = []
+    for e in entries:
+        out.append(e["key"])
+        if e.get("color"):
+            out.append(e["color"])
+    return out
+
+
 def key_for(t):
     d = dt.datetime.fromtimestamp(t, dt.timezone.utc)
     return f"{PREFIX}{d:%Y/%m/%d}/{d:%Y%m%dT%H%M%SZ}.odp"
@@ -260,9 +402,17 @@ def load_index(store):
         return json.loads(raw)["snapshots"]
     # No index yet (or it was deleted): rebuild it from the files in the bucket.
     keys = store.list(PREFIX)
-    if keys:
-        log(f"rebuilding index from {len(keys)} files in the bucket")
-    return sorted(({"key": k, "t": t_from_key(k), "bytes": 0} for k in keys), key=lambda e: e["t"])
+    odp = [k for k in keys if k.endswith(".odp")]
+    jpgs = {k for k in keys if k.endswith(".jpg")}
+    if odp:
+        log(f"rebuilding index from {len(odp)} snapshots in the bucket")
+    entries = []
+    for k in odp:
+        e = {"key": k, "t": t_from_key(k), "bytes": 0}
+        if k[:-4] + ".jpg" in jpgs:
+            e["color"] = k[:-4] + ".jpg"
+        entries.append(e)
+    return sorted(entries, key=lambda e: e["t"])
 
 
 def save_index(store, entries, interval_min):
@@ -278,32 +428,112 @@ def save_index(store, entries, interval_min):
 # =========================================================================== main loop
 def take_snapshot(args, store, entries, t=None):
     t = int(t if t is not None else time.time())
+    color = not args.no_color
     if args.mock:
-        depth, scale, intr = capture_mock(t)
+        depth, scale, intr, jpeg = capture_mock(t, color=color)
     else:
-        depth, scale, intr = capture_orbbec(args.frames, args.warmup, args.width, args.height)
-    if args.step > 1:
-        depth = depth[::args.step, ::args.step]
-        intr = tuple(v / args.step for v in intr)
+        depth, scale, intr, jpeg = capture_orbbec(args.frames, args.warmup, args.width, args.height, color)
+    # Auto step: keep roughly 640 points across (a 1280-wide aligned frame -> every 2nd pixel).
+    step = args.step or max(1, round(depth.shape[1] / 640))
+    if step > 1:
+        depth = depth[::step, ::step]
+        intr = tuple(v / step for v in intr)
     data = encode(depth, scale, intr)
     key = key_for(t)
-    store.put(key, data, "application/octet-stream", "public, max-age=31536000, immutable")
-    entries = [e for e in entries if e["key"] != key] + [{"key": key, "t": t, "bytes": len(data)}]
+    immutable = "public, max-age=31536000, immutable"
+    store.put(key, data, "application/octet-stream", immutable)
+    entry = {"key": key, "t": t, "bytes": len(data)}
+    if jpeg:
+        ckey = key[:-4] + ".jpg"
+        store.put(ckey, jpeg, "image/jpeg", immutable)
+        entry["color"] = ckey
+        entry["bytes"] += len(jpeg)
+    entries = [e for e in entries if e["key"] != key] + [entry]
     entries.sort(key=lambda e: e["t"])
     keep, delete = plan_retention(entries, now=t)
     if delete:
-        store.delete(e["key"] for e in delete)
+        store.delete(files_of(delete))
     save_index(store, keep, args.interval)
     valid = int(np.count_nonzero(depth))
-    log(f"saved {key} ({len(data) / 1024:.0f} KB, {valid:,} points); removed {len(delete)} old; {len(keep)} kept")
+    extra = " + colour" if jpeg else ""
+    log(f"saved {key}{extra} ({entry['bytes'] / 1024:.0f} KB, {valid:,} points); removed {len(delete)} old; {len(keep)} kept")
     return keep
 
 
+def enter_pressed():
+    """True if Enter was pressed in this console window (never blocks)."""
+    if not sys.stdin or not sys.stdin.isatty():
+        return False
+    try:
+        import msvcrt  # Windows
+        hit = False
+        while msvcrt.kbhit():
+            if msvcrt.getwch() in ("\r", "\n"):
+                hit = True
+        return hit
+    except ImportError:
+        import select
+        if select.select([sys.stdin], [], [], 0)[0]:
+            sys.stdin.readline()
+            return True
+        return False
+
+
 def sleep_until_next(interval_min):
-    """Align captures to the clock, e.g. :00, :15, :30, :45 for 15 minutes."""
+    """Wait for the next quarter hour (for 15 min), or until Enter is pressed.
+
+    Returns True if the wait was cut short by Enter.
+    """
     period = interval_min * 60
-    wait = period - (time.time() % period)
-    time.sleep(wait)
+    end = time.time() + period - (time.time() % period)
+    nxt = dt.datetime.fromtimestamp(end)
+    log(f"next snapshot at {nxt:%H:%M}. Press Enter to take one now, Ctrl+C to stop.")
+    while time.time() < end:
+        if enter_pressed():
+            log("snapshot requested")
+            return True
+        time.sleep(0.2)
+    return False
+
+
+def run_test(args):
+    """Upload one snapshot, check it can be read back, then undo everything."""
+    store = LocalStore(args.local) if args.local else R2Store()
+    try:
+        before = load_index(store)
+        t = int(time.time())
+        while any(e["key"] == key_for(t) for e in before):
+            t += 1  # never overwrite a real snapshot
+        after = take_snapshot(args, store, list(before), t=t)
+        new = [e for e in after if e not in before]
+        raw = store.get(new[-1]["key"]) if new else None
+        ok = raw is not None and raw[:4] == b"ODP1" and store.get(INDEX_KEY) is not None
+        if ok and new[-1].get("color"):
+            jpg = store.get(new[-1]["color"])
+            ok = jpg is not None and jpg[:2] == b"\xff\xd8"
+    except Exception as exc:
+        log(f"TEST FAILED: {exc}")
+        hint = str(exc)
+        if "InvalidAccessKeyId" in hint or "SignatureDoesNotMatch" in hint or "Unauthorized" in hint:
+            log("-> the Access Key ID or Secret Access Key is wrong. Run setup.bat again.")
+        elif "NoSuchBucket" in hint:
+            log("-> no bucket with that name. Check R2_BUCKET.")
+        elif "AccessDenied" in hint:
+            log("-> the API token lacks Object Read & Write on this bucket.")
+        elif "Could not connect" in hint or "getaddrinfo" in hint:
+            log("-> could not reach Cloudflare. Check the account ID and your internet connection.")
+        return 1
+    # Clean up: remove the test snapshot and restore the previous index.
+    store.delete(files_of(new))
+    if before:
+        save_index(store, before, args.interval)
+    else:
+        store.delete([INDEX_KEY])
+    if ok:
+        log("TEST PASSED: upload, read-back and clean-up all worked.")
+        return 0
+    log("TEST FAILED: the snapshot could not be read back.")
+    return 1
 
 
 def main():
@@ -311,13 +541,17 @@ def main():
     ap.add_argument("--interval", type=float, default=15, help="minutes between snapshots (default 15)")
     ap.add_argument("--frames", type=int, default=10, help="frames to median-filter per snapshot")
     ap.add_argument("--warmup", type=int, default=15, help="frames to skip after opening the camera")
-    ap.add_argument("--step", type=int, default=1, help="keep every Nth pixel (2 = quarter size)")
+    ap.add_argument("--step", type=int, default=0, help="keep every Nth pixel (default: auto, about 640 wide)")
     ap.add_argument("--width", type=int, help="depth width, e.g. 800")
     ap.add_argument("--height", type=int, help="depth height, e.g. 600")
     ap.add_argument("--local", help="save into this folder instead of R2 (for testing)")
     ap.add_argument("--once", action="store_true", help="take one snapshot and exit")
     ap.add_argument("--mock", action="store_true", help="synthetic data instead of a camera")
+    ap.add_argument("--no-color", action="store_true", help="save depth only, no colour photo")
+    ap.add_argument("--test", action="store_true", help="upload one snapshot, read it back, then remove it")
     args = ap.parse_args()
+    if args.test:
+        sys.exit(run_test(args))
 
     store = LocalStore(args.local) if args.local else R2Store()
     entries = load_index(store)
@@ -325,6 +559,9 @@ def main():
 
     while True:
         try:
+            # Re-read the index each time, so snapshots taken by snapshot_now.bat
+            # (a separate program) are kept in it and thinned like the rest.
+            entries = load_index(store)
             entries = take_snapshot(args, store, entries)
         except KeyboardInterrupt:
             raise
