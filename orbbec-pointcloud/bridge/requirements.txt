@@ -1,0 +1,5 @@
+numpy
+boto3
+pillow
+# pyorbbecsdk: pip install pyorbbecsdk2
+# or the Windows wheel for your Python version from https://github.com/orbbec/pyorbbecsdk/releases

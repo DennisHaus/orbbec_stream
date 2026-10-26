@@ -10,13 +10,13 @@
 <style>
   :root {
     --bg: #17242b;
-    --panel: rgba(34, 51, 59, 0.88);
+    --panel: rgba(34, 51, 59, 0.9);
     --line: rgba(223, 233, 236, 0.14);
     --text: #dfe9ec;
     --muted: #8fa6ad;
     --accent: #f2b134;
     --accent-ink: #1d1503;
-    --ok: #5fd39a;
+    --accent-soft: rgba(242, 177, 52, 0.14);
     --bad: #ff7a6b;
     --field: rgba(10, 20, 25, 0.45);
     color-scheme: dark;
@@ -25,13 +25,13 @@
   @media (prefers-color-scheme: light) {
     :root {
       --bg: #e4ecee;
-      --panel: rgba(255, 255, 255, 0.92);
+      --panel: rgba(255, 255, 255, 0.93);
       --line: rgba(19, 37, 44, 0.14);
       --text: #13252c;
       --muted: #55707a;
       --accent: #b9780a;
       --accent-ink: #fff8ea;
-      --ok: #198a55;
+      --accent-soft: rgba(185, 120, 10, 0.12);
       --bad: #c23b2c;
       --field: rgba(19, 37, 44, 0.06);
       color-scheme: light;
@@ -45,7 +45,7 @@
     position: fixed;
     left: max(16px, env(safe-area-inset-left));
     bottom: max(16px, env(safe-area-inset-bottom));
-    width: min(380px, calc(100vw - 32px));
+    width: min(400px, calc(100vw - 32px));
     max-height: calc(100vh - 32px);
     overflow-y: auto;
     background: var(--panel);
@@ -53,65 +53,100 @@
     -webkit-backdrop-filter: blur(14px);
     border: 1px solid var(--line);
     border-radius: 14px;
-    padding: 16px 18px 18px;
+    padding: 16px 18px 16px;
     font-size: 15px;
     line-height: 1.4;
   }
   .head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
   .when {
     font-family: "Barlow Semi Condensed", "Barlow", sans-serif;
-    font-weight: 600;
-    font-size: 30px;
-    line-height: 1.1;
-    letter-spacing: -0.005em;
-    margin: 0;
+    font-weight: 600; font-size: 30px; line-height: 1.1; margin: 0;
     font-variant-numeric: tabular-nums;
   }
   .sub { color: var(--muted); margin: 4px 0 0; min-height: 21px; }
   .sub .tier { color: var(--text); }
   .toggle { background: none; border: 0; color: var(--muted); font: inherit; cursor: pointer; padding: 4px 6px; border-radius: 6px; flex: none; }
-  .status { display: flex; align-items: center; gap: 8px; color: var(--muted); margin-top: 10px; font-size: 14px; }
+  .status { color: var(--muted); margin-top: 12px; font-size: 13px; }
   .status:empty { display: none; }
   .status.err { color: var(--bad); }
 
-  .timeline { margin-top: 14px; }
-  .timeline input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; }
+  .timeline { margin-top: 12px; }
+  .timeline input[type=range] { width: 100%; margin: 0; }
   .ends { display: flex; justify-content: space-between; color: var(--muted); font-size: 13px; margin-top: 2px; font-variant-numeric: tabular-nums; }
-  .nav { display: grid; grid-template-columns: 1fr 1fr 1.3fr 1fr; gap: 6px; margin-top: 10px; }
+  .nav { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; margin-top: 10px; }
 
-  .row { display: flex; gap: 8px; }
-  input[type=text] {
-    flex: 1; min-width: 0; font: inherit; font-size: 14px; color: var(--text); background: var(--field);
-    border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px;
-  }
-  button { font: inherit; cursor: pointer; border-radius: 8px; }
-  button.primary { font-weight: 600; border: 0; padding: 8px 14px; background: var(--accent); color: var(--accent-ink); }
-  button.ghost { font-size: 14px; border: 1px solid var(--line); padding: 7px 10px; background: transparent; color: var(--text); }
-  button:disabled { opacity: 0.45; cursor: default; }
-  button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-
-  details { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 10px; }
-  summary { cursor: pointer; color: var(--muted); font-size: 14px; }
-  details[open] summary { margin-bottom: 12px; }
-  .controls { display: grid; grid-template-columns: auto 1fr auto; gap: 10px 12px; align-items: center; }
-  .controls label { color: var(--muted); font-size: 14px; }
-  .controls output { font-variant-numeric: tabular-nums; font-size: 14px; min-width: 3.6em; text-align: right; }
-  .controls input[type=range] { width: 100%; accent-color: var(--accent); }
-  select {
-    grid-column: 2 / 4; font: inherit; font-size: 14px; color: var(--text); background: var(--field);
+  input[type=range] { accent-color: var(--accent); width: 100%; min-width: 0; }
+  input[type=text], input[type=number] {
+    min-width: 0; font: inherit; font-size: 14px; color: var(--text); background: var(--field);
     border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px;
+    font-variant-numeric: tabular-nums;
   }
+  input[type=number] { width: 100%; padding: 5px 6px; text-align: right; }
+  button { font: inherit; cursor: pointer; border-radius: 8px; }
+  button.primary { font-weight: 600; border: 0; padding: 7px 14px; background: var(--accent); color: var(--accent-ink); }
+  button.ghost { font-size: 14px; border: 1px solid var(--line); padding: 6px 10px; background: transparent; color: var(--text); }
+  button.ghost[aria-pressed=true] { background: var(--accent-soft); border-color: var(--accent); }
+  button:disabled { opacity: 0.45; cursor: default; }
+  button.icon { border: 0; background: none; color: var(--muted); padding: 4px 8px; font-size: 16px; line-height: 1; }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  select {
+    font: inherit; font-size: 14px; color: var(--text); background: var(--field);
+    border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; width: 100%;
+  }
+
+  .tabs { display: flex; gap: 2px; margin-top: 14px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+  .tabs button {
+    border: 0; background: none; color: var(--muted); font-size: 14px; font-weight: 500;
+    padding: 8px 9px 7px; border-radius: 6px 6px 0; border-bottom: 2px solid transparent; flex: none;
+  }
+  .tabs button[aria-selected=true] { color: var(--text); border-bottom-color: var(--accent); }
+  .pane { padding-top: 12px; }
+  .pane[hidden] { display: none; }
+
+  .row { display: flex; gap: 8px; align-items: center; }
+  .row > input[type=text] { flex: 1; }
+  .grow { flex: 1; }
+  .hint { color: var(--muted); font-size: 13px; margin: 10px 0 0; }
+  .field { display: grid; grid-template-columns: 5.6em 1fr 4.8em; gap: 10px; align-items: center; margin-top: 8px; }
+  .field > label { color: var(--muted); font-size: 14px; }
+  .field3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+  .field3 label { display: block; color: var(--muted); font-size: 13px; margin-bottom: 3px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; background: none; color: var(--text); font-size: 14px; padding: 5px 11px; }
+  .seg button[aria-pressed=true] { background: var(--accent-soft); color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
+  .group-label { color: var(--muted); font-size: 13px; margin: 14px 0 0; }
+
+  .sec { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px 10px; margin-top: 10px; cursor: pointer; }
+  .sec.sel { border-color: var(--accent); background: var(--accent-soft); }
+  .sec.off { opacity: 0.6; }
+  .sec-head { display: flex; align-items: center; gap: 6px; }
+  .sec-head label { display: flex; align-items: center; gap: 8px; flex: 1; font-weight: 600; cursor: pointer; }
+  .sec-head input { accent-color: var(--accent); width: 16px; height: 16px; }
+  .sec-opts { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .side { color: var(--muted); font-size: 13px; }
+  .empty-list { color: var(--muted); font-size: 14px; margin: 10px 0 0; }
+
+  .views { list-style: none; padding: 0; margin: 10px 0 0; }
+  .views li { display: flex; align-items: center; gap: 4px; border-top: 1px solid var(--line); }
+  .views li:last-child { border-bottom: 1px solid var(--line); }
+  .views .apply { flex: 1; text-align: left; background: none; border: 0; color: var(--text); padding: 8px 2px; border-radius: 4px; }
   .actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-  .hint { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
 
   .panel.collapsed .body { display: none; }
 
   .empty { position: fixed; inset: 0; display: grid; place-items: center; pointer-events: none; padding: 24px; }
   .empty p { max-width: 34ch; text-align: center; color: var(--muted); font-size: 17px; line-height: 1.5; margin: 0; }
   .empty.hidden { display: none; }
+  .toast {
+    position: fixed; top: max(16px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px;
+    font-size: 14px; opacity: 0; transition: opacity 0.2s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
   @media (max-width: 520px) {
-    .panel { left: 12px; right: 12px; width: auto; bottom: max(12px, env(safe-area-inset-bottom)); max-height: 62vh; }
+    .panel { left: 12px; right: 12px; width: auto; bottom: max(12px, env(safe-area-inset-bottom)); max-height: 60vh; }
     .when { font-size: 26px; }
+    .tabs button { padding: 8px 6px 7px; font-size: 13.5px; }
     .empty { align-items: start; padding-top: 14vh; }
   }
 </style>
@@ -124,7 +159,8 @@
 </head>
 <body>
 <canvas id="scene"></canvas>
-<div class="empty" id="empty"><p>Enter your R2 bucket’s public address below to browse its snapshots.</p></div>
+<div class="empty" id="empty"><p>Enter your R2 bucket’s public address in the Bucket tab to browse its snapshots.</p></div>
+<div class="toast" id="toast" role="status"></div>
 
 <section class="panel" id="panel" aria-label="Snapshot browser">
   <div class="head">
@@ -138,45 +174,120 @@
       <input type="range" id="slider" min="0" max="0" value="0" aria-label="Snapshot time">
       <div class="ends"><span id="oldest"></span><span id="count"></span><span>now</span></div>
       <div class="nav">
-        <button class="ghost" id="prev" aria-label="Older snapshot">Older</button>
-        <button class="ghost" id="next" aria-label="Newer snapshot">Newer</button>
+        <button class="ghost" id="prev">Older</button>
+        <button class="ghost" id="next">Newer</button>
         <button class="ghost" id="play" aria-label="Play time-lapse">Play</button>
         <button class="ghost" id="latest">Latest</button>
       </div>
     </div>
 
-    <details id="setup" open>
-      <summary>Bucket</summary>
-      <div class="row">
-        <input type="text" id="bucket" spellcheck="false" autocomplete="off" aria-label="Bucket public address" placeholder="https://pub-….r2.dev">
-        <button class="primary" id="load">Load</button>
-      </div>
-      <p class="hint">The bucket’s public URL from Cloudflare (R2 › your bucket › Settings › Public access).</p>
-    </details>
+    <div class="tabs" role="tablist">
+      <button role="tab" data-tab="sections" aria-selected="true">Sections</button>
+      <button role="tab" data-tab="model" aria-selected="false">Model</button>
+      <button role="tab" data-tab="views" aria-selected="false">Views</button>
+      <button role="tab" data-tab="display" aria-selected="false">Display</button>
+      <button role="tab" data-tab="bucket" aria-selected="false">Bucket</button>
+    </div>
 
-    <details>
-      <summary>Display</summary>
-      <div class="controls">
+    <!-- Sections -->
+    <div class="pane" data-pane="sections">
+      <div class="row">
+        <button class="ghost grow" id="addH">+ Horizontal</button>
+        <button class="ghost grow" id="addV">+ Vertical</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <span class="side grow">Drag the selected plane:</span>
+        <div class="seg" role="group" aria-label="Drag mode">
+          <button data-gizmo="translate" aria-pressed="true">Move</button>
+          <button data-gizmo="rotate" aria-pressed="false">Rotate</button>
+        </div>
+      </div>
+      <div id="sectionList"></div>
+      <label class="row hint" style="cursor:pointer"><input type="checkbox" id="showPlanes" checked style="accent-color:var(--accent)"> Show section planes</label>
+    </div>
+
+    <!-- Model -->
+    <div class="pane" data-pane="model" hidden>
+      <div class="row">
+        <span class="side grow">Drag the model:</span>
+        <div class="seg" role="group" aria-label="Drag mode">
+          <button data-gizmo="translate" aria-pressed="true">Move</button>
+          <button data-gizmo="rotate" aria-pressed="false">Rotate</button>
+        </div>
+      </div>
+      <p class="group-label">Position (m)</p>
+      <div class="field3">
+        <div><label for="mx">X</label><input type="number" id="mx" step="0.01"></div>
+        <div><label for="my">Y</label><input type="number" id="my" step="0.01"></div>
+        <div><label for="mz">Z (up)</label><input type="number" id="mz" step="0.01"></div>
+      </div>
+      <p class="group-label">Rotation (°)</p>
+      <div class="field">
+        <label for="mrzR">Around Z</label>
+        <input type="range" id="mrzR" min="-180" max="180" step="0.5">
+        <input type="number" id="mrz" step="0.5" aria-label="Rotation around Z in degrees">
+      </div>
+      <div class="field3">
+        <div><label for="mrx">Tilt X</label><input type="number" id="mrx" step="0.25"></div>
+        <div><label for="mry">Tilt Y</label><input type="number" id="mry" step="0.25"></div>
+        <div style="align-self:end"><button class="ghost" id="resetModel" style="width:100%">Reset</button></div>
+      </div>
+      <p class="hint">Tilt and raise the model until the floor lies on the grid. Then Z is the height above the floor, and horizontal sections cut at true heights.</p>
+    </div>
+
+    <!-- Views -->
+    <div class="pane" data-pane="views" hidden>
+      <div class="row">
+        <input type="text" id="viewName" placeholder="Name, e.g. Floor plan" aria-label="View name">
+        <button class="primary" id="saveView">Save view</button>
+      </div>
+      <p class="hint" style="margin-top:6px">A view stores the sections and camera position. The model alignment is shared by all views.</p>
+      <ul class="views" id="viewList"></ul>
+      <p class="group-label">Share or back up</p>
+      <div class="actions">
+        <button class="ghost" id="copyLink">Copy link</button>
+        <button class="ghost" id="download">Download settings</button>
+        <button class="ghost" id="upload">Load settings…</button>
+        <input type="file" id="uploadFile" accept=".json,application/json" hidden>
+      </div>
+      <p class="hint">Everything saves automatically in this browser. To give everyone the same alignment, sections and views, upload the downloaded file to your bucket named <b>view.json</b>.</p>
+    </div>
+
+    <!-- Display -->
+    <div class="pane" data-pane="display" hidden>
+      <div class="field">
         <label for="size">Point size</label>
         <input type="range" id="size" min="1" max="8" step="0.5" value="2">
         <output id="sizeOut">2</output>
-
+      </div>
+      <div class="field">
         <label for="range">Max distance</label>
         <input type="range" id="range" min="0.5" max="8" step="0.1" value="5">
         <output id="rangeOut">5.0 m</output>
-
+      </div>
+      <div class="field">
         <label for="mode">Colour by</label>
-        <select id="mode">
+        <select id="mode" style="grid-column: 2 / 4">
+          <option value="camera">Camera colour</option>
           <option value="depth">Distance from camera</option>
           <option value="height">Height</option>
           <option value="mono">Single colour</option>
         </select>
       </div>
       <div class="actions">
-        <button class="ghost" id="resetView">Reset view</button>
-        <button class="ghost" id="savePly" disabled>Save this snapshot (.ply)</button>
+        <button class="ghost" id="resetView">Fit to view</button>
+        <button class="ghost" id="savePly" disabled>Save visible points (.ply)</button>
       </div>
-    </details>
+    </div>
+
+    <!-- Bucket -->
+    <div class="pane" data-pane="bucket" hidden>
+      <div class="row">
+        <input type="text" id="bucket" spellcheck="false" autocomplete="off" aria-label="Bucket public address" placeholder="https://pub-….r2.dev">
+        <button class="primary" id="load">Load</button>
+      </div>
+      <p class="hint">The bucket’s public URL from Cloudflare (R2 › your bucket › Settings › Public access).</p>
+    </div>
 
     <div class="status" id="status" role="status"></div>
   </div>
@@ -185,35 +296,52 @@
 <script type="module">
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { TransformControls } from "three/addons/controls/TransformControls.js";
 
 const $ = (id) => document.getElementById(id);
+const rad = (d) => d * Math.PI / 180, deg = (r) => r * 180 / Math.PI;
+const wrap180 = (a) => ((a + 180) % 360 + 360) % 360 - 180;
+const wrap360 = (a) => ((a % 360) + 360) % 360;
+const accent = () => new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue("--accent").trim());
 
-// ---------------------------------------------------------------- scene
+// Coordinates shown to the person are Z-up (X right, Y forward, Z up).
+// three.js is Y-up, so: three.x = X, three.y = Z, three.z = -Y.
+
+// ================================================================ scene
 const renderer = new THREE.WebGLRenderer({ canvas: $("scene"), antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.localClippingEnabled = true;
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(60, 1, 0.01, 100);
+const camera = new THREE.PerspectiveCamera(60, 1, 0.01, 200);
 const controls = new OrbitControls(camera, $("scene"));
 controls.enableDamping = true;
-function resetView() {
-  camera.position.set(1.1, 0.7, 1.0);
-  controls.target.set(0, 0, -2);
-  controls.update();
-}
-resetView();
+camera.position.set(1.1, 0.7, 1.0);
+controls.target.set(0, 0, -2);
 
-const grid = new THREE.GridHelper(8, 16, 0x6f8a92, 0x6f8a92);
-grid.material.transparent = true; grid.material.opacity = 0.18;
-grid.position.set(0, -1.2, -3);
+const grid = new THREE.GridHelper(10, 20, 0x6f8a92, 0x6f8a92);
+grid.material.transparent = true; grid.material.opacity = 0.2;
 scene.add(grid);
-scene.add(new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.03, 0.03), new THREE.MeshBasicMaterial({ color: 0xf2b134, wireframe: true })));
+
+const modelGroup = new THREE.Group();
+modelGroup.rotation.order = "YXZ";
+scene.add(modelGroup);
+modelGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.03, 0.03), new THREE.MeshBasicMaterial({ color: 0xf2b134, wireframe: true })));
 
 let capacity = 0;
 const geometry = new THREE.BufferGeometry();
 const material = new THREE.PointsMaterial({ size: 2, sizeAttenuation: false, vertexColors: true });
 const cloud = new THREE.Points(geometry, material);
 cloud.frustumCulled = false;
-scene.add(cloud);
+modelGroup.add(cloud);
+
+const gizmo = new TransformControls(camera, $("scene"));
+gizmo.setSize(0.8);
+scene.add(gizmo);
+gizmo.addEventListener("dragging-changed", (e) => {
+  controls.enabled = !e.value;
+  if (!e.value) { updateHelpers(); scheduleSave(); }
+});
+gizmo.addEventListener("objectChange", onGizmoChange);
 
 function ensureCapacity(n) {
   if (n <= capacity) return;
@@ -230,7 +358,7 @@ addEventListener("resize", resize);
 resize();
 renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
 
-// Turbo colormap (polynomial approximation, Google, Apache-2.0).
+// ================================================================ colour helpers
 function turbo(t, out, i) {
   t = Math.min(1, Math.max(0, t));
   const t2 = t * t, t3 = t2 * t, t4 = t3 * t, t5 = t4 * t;
@@ -238,8 +366,12 @@ function turbo(t, out, i) {
   out[i + 1] = Math.min(1, Math.max(0, 0.09140261 + 2.19418839 * t + 4.84296658 * t2 - 14.18503333 * t3 + 4.27729857 * t4 + 2.82956604 * t5));
   out[i + 2] = Math.min(1, Math.max(0, 0.10667330 + 12.64194608 * t - 60.58204836 * t2 + 110.36276771 * t3 - 89.90310912 * t4 + 27.34824973 * t5));
 }
+const SRGB_TO_LINEAR = new Float32Array(256).map((_, i) => {
+  const c = i / 255;
+  return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+});
 
-// ---------------------------------------------------------------- snapshot decoding
+// ================================================================ snapshot decoding
 async function inflate(bytes) {
   const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate"));
   return new Uint8Array(await new Response(stream).arrayBuffer());
@@ -260,57 +392,660 @@ async function decode(buf) {
   f.depth = new Uint16Array(aligned.buffer, 0, f.w * f.h);
   return f;
 }
+async function loadColor(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const bmp = await createImageBitmap(await r.blob());
+  const c = document.createElement("canvas");
+  c.width = bmp.width; c.height = bmp.height;
+  const g = c.getContext("2d", { willReadFrequently: true });
+  g.drawImage(bmp, 0, 0);
+  bmp.close && bmp.close();
+  return { rgb: g.getImageData(0, 0, c.width, c.height).data, cw: c.width, ch: c.height };
+}
+
+// ================================================================ point cloud
+let pointCount = 0;
+const localBox = new THREE.Box3();
+let worldBox = null;
 
 function buildCloud(f) {
   const { w, h, fx, fy, cx, cy, scale, depth } = f;
   ensureCapacity(w * h);
   const pos = geometry.attributes.position.array, col = geometry.attributes.color.array;
-  const maxM = parseFloat($("range").value), mode = $("mode").value, k = scale / 1000;
+  const maxM = state.display.range, k = scale / 1000;
+  const useCam = state.display.mode === "camera" && f.rgb;
+  const rgb = f.rgb, cw = f.cw, sx = useCam ? f.cw / w : 0, sy = useCam ? f.ch / h : 0;
   let n = 0;
+  let x0 = Infinity, y0 = Infinity, z0 = Infinity, x1 = -Infinity, y1 = -Infinity, z1 = -Infinity;
   for (let v = 0; v < h; v++) {
+    const row = useCam ? Math.min(f.ch - 1, Math.floor(v * sy)) * cw : 0;
     for (let u = 0; u < w; u++) {
       const d = depth[v * w + u];
       if (d === 0) continue;
       const z = d * k;
       if (z > maxM) continue;
       const j = n * 3;
-      pos[j] = (u - cx) * z / fx;
-      pos[j + 1] = -(v - cy) * z / fy;
-      pos[j + 2] = -z;
+      const X = (u - cx) * z / fx, Y = -(v - cy) * z / fy, Z = -z;
+      pos[j] = X; pos[j + 1] = Y; pos[j + 2] = Z;
+      if (X < x0) x0 = X; if (X > x1) x1 = X;
+      if (Y < y0) y0 = Y; if (Y > y1) y1 = Y;
+      if (Z < z0) z0 = Z; if (Z > z1) z1 = Z;
+      if (useCam) {
+        const ci = (row + Math.min(cw - 1, Math.floor(u * sx))) * 4;
+        col[j] = SRGB_TO_LINEAR[rgb[ci]]; col[j + 1] = SRGB_TO_LINEAR[rgb[ci + 1]]; col[j + 2] = SRGB_TO_LINEAR[rgb[ci + 2]];
+      }
       n++;
     }
   }
-  if (mode === "mono") {
-    const c = new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue("--accent").trim());
-    for (let i = 0; i < n * 3; i += 3) { col[i] = c.r; col[i + 1] = c.g; col[i + 2] = c.b; }
-  } else if (mode === "height") {
-    for (let i = 0; i < n * 3; i += 3) turbo((pos[i + 1] + 1.2) / 2.4, col, i);
-  } else {
-    for (let i = 0; i < n * 3; i += 3) turbo(1 - (-pos[i + 2]) / maxM, col, i);
-  }
+  pointCount = n;
+  if (n) localBox.set(new THREE.Vector3(x0, y0, z0), new THREE.Vector3(x1, y1, z1));
+  if (!useCam) colorize();
   geometry.setDrawRange(0, n);
   geometry.attributes.position.needsUpdate = true;
   geometry.attributes.color.needsUpdate = true;
+  updateWorldBox();
   return n;
 }
 
-// ---------------------------------------------------------------- bucket + timeline
-let base = "", snaps = [], current = -1, shown = null, playing = null;
-const cache = new Map(); // key -> Promise<frame>, small LRU
+// Colours that don't come from the photo (also re-run when the model moves, for height).
+function colorize() {
+  const n = pointCount, pos = geometry.attributes.position?.array, col = geometry.attributes.color?.array;
+  if (!n || !pos) return;
+  let mode = state.display.mode;
+  if (mode === "camera") mode = "depth"; // depth-only snapshot
+  if (mode === "mono") {
+    const c = accent();
+    for (let i = 0; i < n * 3; i += 3) { col[i] = c.r; col[i + 1] = c.g; col[i + 2] = c.b; }
+  } else if (mode === "height") {
+    modelGroup.updateMatrixWorld(true);
+    const e = modelGroup.matrixWorld.elements;
+    let lo = Infinity, hi = -Infinity;
+    const hy = new Float32Array(n);
+    for (let p = 0, i = 0; p < n; p++, i += 3) {
+      const y = e[1] * pos[i] + e[5] * pos[i + 1] + e[9] * pos[i + 2] + e[13];
+      hy[p] = y; if (y < lo) lo = y; if (y > hi) hi = y;
+    }
+    const span = Math.max(0.01, hi - lo);
+    for (let p = 0, i = 0; p < n; p++, i += 3) turbo((hy[p] - lo) / span, col, i);
+  } else {
+    const maxM = state.display.range;
+    for (let i = 0; i < n * 3; i += 3) turbo(1 + pos[i + 2] / maxM, col, i);
+  }
+  geometry.attributes.color.needsUpdate = true;
+}
+let recolorQueued = false;
+function scheduleRecolor() {
+  if (recolorQueued || state.display.mode !== "height") return;
+  recolorQueued = true;
+  requestAnimationFrame(() => { recolorQueued = false; colorize(); });
+}
+
+function updateWorldBox() {
+  if (!pointCount) return;
+  modelGroup.updateMatrixWorld(true);
+  worldBox = localBox.clone().applyMatrix4(modelGroup.matrixWorld);
+}
+
+function frameCloud() {
+  if (!worldBox) return;
+  const c = worldBox.getCenter(new THREE.Vector3());
+  const r = Math.max(1, worldBox.getSize(new THREE.Vector3()).length() * 0.7);
+  controls.target.copy(c);
+  camera.position.copy(c).add(new THREE.Vector3(0.55, 0.45, 1).normalize().multiplyScalar(r * 1.4));
+  controls.update();
+  saveCamera();
+}
+
+// ================================================================ state & persistence
+const defaultState = () => ({
+  model: { x: 0, y: 0, z: 0, rz: 0, rx: 0, ry: 0 },
+  sections: [],
+  camera: null,
+  views: [],
+  display: { size: 2, range: 5, mode: "camera" },
+});
+let state = defaultState();
+let base = "";
+let selectedId = null;
+let activeTab = "sections";
+let needFraming = true;
+let showPlanes = true;
+
+const storeKey = () => `orbbec-state:${base}`;
+let saveTimer = null;
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    if (!base) return;
+    try { localStorage.setItem(storeKey(), JSON.stringify(state)); } catch {}
+  }, 400);
+}
+function saveCamera() {
+  state.camera = { p: camera.position.toArray().map(r4), t: controls.target.toArray().map(r4) };
+  scheduleSave();
+}
+const r4 = (x) => Math.round(x * 1e4) / 1e4;
+controls.addEventListener("end", saveCamera);
+
+let nextId = 1;
+function normalizeState(s) {
+  const d = defaultState();
+  const out = {
+    model: { ...d.model, ...(s?.model || {}) },
+    sections: Array.isArray(s?.sections) ? s.sections : [],
+    camera: s?.camera || null,
+    views: Array.isArray(s?.views) ? s.views : [],
+    display: { ...d.display, ...(s?.display || {}) },
+  };
+  out.sections = out.sections.map((x) => cleanSection(x));
+  return out;
+}
+function cleanSection(x) {
+  return {
+    id: nextId++,
+    name: x.name || (x.type === "v" ? "Vertical" : "Horizontal"),
+    type: x.type === "v" ? "v" : "h",
+    pos: +x.pos || 0,
+    angle: +x.angle || 0,
+    mode: x.mode === "slice" ? "slice" : "cut",
+    thickness: +x.thickness || 0.1,
+    flip: !!x.flip,
+    on: x.on !== false,
+  };
+}
+const sectionsForSave = () => state.sections.map(({ id, ...rest }) => rest);
+
+function applyState(s) {
+  state = normalizeState(s);
+  selectedId = state.sections[0]?.id ?? null;
+  applyModel({ save: false });
+  applyDisplay();
+  renderSections();
+  applySections();
+  renderViews();
+  if (state.camera) {
+    camera.position.fromArray(state.camera.p);
+    controls.target.fromArray(state.camera.t);
+    controls.update();
+    needFraming = false;
+  } else {
+    needFraming = true;
+  }
+  attachGizmo();
+}
+
+// The settings that make up a "view" and a shared link.
+function snapshotView() {
+  saveCamera();
+  return { sections: sectionsForSave(), camera: state.camera };
+}
+
+function encodeHash(obj) {
+  const json = JSON.stringify(obj);
+  return btoa(String.fromCharCode(...new TextEncoder().encode(json))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function decodeHash(str) {
+  const b64 = str.replace(/-/g, "+").replace(/_/g, "/");
+  const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+
+async function resolveState() {
+  let fromHash = null;
+  const m = location.hash.match(/^#s=(.+)$/);
+  if (m) {
+    try { fromHash = decodeHash(m[1]); } catch { toast("That link’s view couldn’t be read."); }
+    history.replaceState(null, "", location.pathname + location.search);
+  }
+  let local = null;
+  try { local = JSON.parse(localStorage.getItem(storeKey()) || "null"); } catch {}
+  if (fromHash) { applyState({ ...(local || {}), ...fromHash }); scheduleSave(); return; }
+  if (local) { applyState(local); return; }
+  try {
+    const r = await fetch(`${base}/view.json`, { cache: "no-cache" });
+    if (r.ok) { applyState(await r.json()); toast("Loaded shared settings from the bucket"); return; }
+  } catch {}
+  applyState(defaultState());
+}
+
+// ================================================================ model alignment
+function applyModel({ save = true } = {}) {
+  const m = state.model;
+  modelGroup.position.set(m.x, m.z, -m.y);
+  modelGroup.rotation.set(rad(m.rx), rad(m.rz), -rad(m.ry), "YXZ");
+  afterModelChange(save);
+}
+function readModelFromGroup() {
+  const p = modelGroup.position;
+  const e = new THREE.Euler().setFromQuaternion(modelGroup.quaternion, "YXZ");
+  Object.assign(state.model, {
+    x: r4(p.x), y: r4(-p.z), z: r4(p.y),
+    rx: Math.round(deg(e.x) * 100) / 100, rz: Math.round(deg(e.y) * 100) / 100, ry: Math.round(-deg(e.z) * 100) / 100,
+  });
+}
+function afterModelChange(save = true) {
+  modelGroup.updateMatrixWorld(true);
+  updateWorldBox();
+  syncModelInputs();
+  updateHelpers();
+  updateSectionRanges();
+  scheduleRecolor();
+  if (save) scheduleSave();
+}
+function syncModelInputs() {
+  const m = state.model, a = document.activeElement;
+  const set = (id, v, digits) => { const el = $(id); if (el !== a) el.value = (+v).toFixed(digits); };
+  set("mx", m.x, 3); set("my", m.y, 3); set("mz", m.z, 3);
+  set("mrz", m.rz, 1); set("mrx", m.rx, 2); set("mry", m.ry, 2);
+  if ($("mrzR") !== a) $("mrzR").value = wrap180(m.rz);
+}
+for (const [id, key] of [["mx", "x"], ["my", "y"], ["mz", "z"], ["mrz", "rz"], ["mrx", "rx"], ["mry", "ry"]]) {
+  $(id).addEventListener("input", () => {
+    const v = parseFloat($(id).value);
+    if (Number.isFinite(v)) { state.model[key] = v; applyModel(); }
+  });
+}
+$("mrzR").addEventListener("input", () => { state.model.rz = +$("mrzR").value; applyModel(); });
+$("resetModel").onclick = () => { state.model = defaultState().model; applyModel(); };
+
+// ================================================================ sections
+const helpers = new Map(); // section id -> plane outline group
+
+function normalOf(s) {
+  if (s.type === "h") return new THREE.Vector3(0, 1, 0);
+  const t = rad(s.angle);
+  return new THREE.Vector3(Math.cos(t), 0, -Math.sin(t));
+}
+function planesOf(s) {
+  const n = normalOf(s), d = s.pos;
+  if (s.mode === "slice") {
+    const h = Math.max(0.005, s.thickness / 2);
+    return [new THREE.Plane(n.clone(), -(d - h)), new THREE.Plane(n.clone().negate(), d + h)];
+  }
+  // Default keeps below (horizontal) or behind (vertical); flip keeps the other side.
+  return s.flip ? [new THREE.Plane(n.clone(), -d)] : [new THREE.Plane(n.clone().negate(), d)];
+}
+function sideLabel(s) {
+  if (s.type === "h") return s.flip ? "Showing above" : "Showing below";
+  return s.flip ? "Showing front side" : "Showing back side";
+}
+
+function applySections({ moveHelpers = true, skipId = null } = {}) {
+  material.clippingPlanes = state.sections.filter((s) => s.on).flatMap(planesOf);
+  material.needsUpdate = true;
+  if (moveHelpers) updateHelpers(skipId);
+  scheduleSave();
+}
+
+function makeHelper() {
+  const g = new THREE.Group();
+  g.rotation.order = "YXZ";
+  const geo = new THREE.PlaneGeometry(1, 1);
+  geo.rotateY(Math.PI / 2); // plane spans local Y/Z; local X is its normal
+  const c = accent();
+  const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.1, side: THREE.DoubleSide, depthWrite: false }));
+  const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: c, transparent: true, opacity: 0.6 }));
+  g.add(mesh, edges);
+  g.userData = { mesh, edges };
+  scene.add(g);
+  return g;
+}
+function refBox() {
+  return worldBox || new THREE.Box3(new THREE.Vector3(-2, -1, -4), new THREE.Vector3(2, 2, 0));
+}
+function updateHelpers(skipId = null) {
+  for (const [id, g] of helpers) {
+    if (!state.sections.some((s) => s.id === id)) { scene.remove(g); helpers.delete(id); }
+  }
+  const box = refBox();
+  const c = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3());
+  const span = Math.max(size.x, size.z, 1) * 1.15, tall = Math.max(size.y, 1) * 1.15;
+  for (const s of state.sections) {
+    let g = helpers.get(s.id);
+    if (!g) { g = makeHelper(); helpers.set(s.id, g); }
+    const sel = s.id === selectedId;
+    g.visible = showPlanes && (s.on || sel);
+    g.userData.mesh.material.opacity = sel ? 0.1 : 0.04;
+    g.userData.edges.material.opacity = sel ? 0.9 : 0.4;
+    if (s.id === skipId) continue; // being dragged
+    const n = normalOf(s);
+    g.position.copy(c).addScaledVector(n, s.pos - n.dot(c));
+    if (s.type === "h") g.rotation.set(0, 0, Math.PI / 2);
+    else g.rotation.set(0, rad(s.angle), 0);
+    const sy = s.type === "h" ? span : tall;
+    g.userData.mesh.scale.set(1, sy, span);
+    g.userData.edges.scale.set(1, sy, span);
+  }
+}
+
+function sectionRange(s) {
+  const box = refBox(), n = normalOf(s);
+  let lo = Infinity, hi = -Infinity;
+  for (const x of [box.min.x, box.max.x]) for (const y of [box.min.y, box.max.y]) for (const z of [box.min.z, box.max.z]) {
+    const d = n.x * x + n.y * y + n.z * z;
+    lo = Math.min(lo, d); hi = Math.max(hi, d);
+  }
+  return [Math.floor((lo - 0.25) * 10) / 10, Math.ceil((hi + 0.25) * 10) / 10];
+}
+function updateSectionRanges() {
+  for (const s of state.sections) {
+    const card = document.querySelector(`.sec[data-id="${s.id}"]`);
+    if (!card) continue;
+    const [lo, hi] = sectionRange(s);
+    const r = card.querySelector("[data-k=posR]");
+    r.min = Math.min(lo, s.pos); r.max = Math.max(hi, s.pos);
+  }
+}
+
+function addSection(type) {
+  const c = refBox().getCenter(new THREE.Vector3());
+  const count = state.sections.filter((s) => s.type === type).length + 1;
+  const s = cleanSection({ type, name: `${type === "h" ? "Horizontal" : "Vertical"} ${count}`, angle: 0 });
+  s.pos = r4(normalOf(s).dot(c));
+  state.sections.push(s);
+  selectedId = s.id;
+  renderSections();
+  applySections();
+  attachGizmo();
+}
+
+function renderSections() {
+  const list = $("sectionList");
+  list.innerHTML = "";
+  if (!state.sections.length) {
+    list.innerHTML = `<p class="empty-list">No sections yet. Add a horizontal one for a floor plan, or a vertical one for an elevation.</p>`;
+    return;
+  }
+  for (const s of state.sections) list.append(sectionCard(s));
+  updateSectionRanges();
+}
+
+function sectionCard(s) {
+  const el = document.createElement("div");
+  el.className = "sec" + (s.id === selectedId ? " sel" : "") + (s.on ? "" : " off");
+  el.dataset.id = s.id;
+  const posLabel = s.type === "h" ? "Height (Z)" : "Offset";
+  el.innerHTML = `
+    <div class="sec-head">
+      <label><input type="checkbox" data-k="on" ${s.on ? "checked" : ""}><span></span></label>
+      <button class="ghost" data-k="view" style="padding:4px 9px">View</button>
+      <button class="icon" data-k="remove" aria-label="Remove section">✕</button>
+    </div>
+    <div class="field"><label>${posLabel}</label>
+      <input type="range" data-k="posR" step="0.01" min="-5" max="5">
+      <input type="number" data-k="pos" step="0.01" aria-label="${posLabel} in metres"></div>
+    ${s.type === "v" ? `<div class="field"><label>Rotation</label>
+      <input type="range" data-k="angleR" min="0" max="360" step="0.5">
+      <input type="number" data-k="angle" step="0.5" aria-label="Rotation around Z in degrees"></div>` : ""}
+    <div class="sec-opts">
+      <div class="seg" role="group" aria-label="Section type">
+        <button data-k="cut" aria-pressed="${s.mode === "cut"}">Cut</button>
+        <button data-k="slice" aria-pressed="${s.mode === "slice"}">Slice</button>
+      </div>
+      ${s.mode === "cut"
+        ? `<button class="ghost" data-k="flip" style="padding:5px 10px">Flip</button><span class="side">${sideLabel(s)}</span>`
+        : `<span class="side">Thickness</span><input type="number" data-k="thickness" step="0.01" min="0.01" style="width:5em" aria-label="Slice thickness in metres"><span class="side">m</span>`}
+    </div>`;
+  el.querySelector(".sec-head span").textContent = s.name;
+  const q = (k) => el.querySelector(`[data-k=${k}]`);
+  q("posR").value = s.pos; q("pos").value = s.pos.toFixed(3);
+  if (s.type === "v") { q("angleR").value = wrap360(s.angle); q("angle").value = s.angle.toFixed(1); }
+  if (s.mode === "slice") q("thickness").value = s.thickness.toFixed(2);
+
+  el.addEventListener("pointerdown", () => selectSection(s.id));
+  el.addEventListener("focusin", () => selectSection(s.id));
+  q("on").addEventListener("change", () => { s.on = q("on").checked; el.classList.toggle("off", !s.on); applySections(); });
+  q("view").addEventListener("click", () => lookAtSection(s));
+  q("remove").addEventListener("click", (e) => {
+    e.stopPropagation();
+    state.sections = state.sections.filter((x) => x !== s);
+    if (selectedId === s.id) selectedId = state.sections[0]?.id ?? null;
+    renderSections(); applySections(); attachGizmo();
+  });
+  q("posR").addEventListener("input", () => { s.pos = +q("posR").value; q("pos").value = s.pos.toFixed(3); applySections(); });
+  q("pos").addEventListener("input", () => { const v = parseFloat(q("pos").value); if (Number.isFinite(v)) { s.pos = v; q("posR").value = v; applySections(); } });
+  if (s.type === "v") {
+    const setAngle = (v) => { s.angle = v; updateSectionRanges(); applySections(); };
+    q("angleR").addEventListener("input", () => { q("angle").value = (+q("angleR").value).toFixed(1); setAngle(+q("angleR").value); });
+    q("angle").addEventListener("input", () => { const v = parseFloat(q("angle").value); if (Number.isFinite(v)) { q("angleR").value = wrap360(v); setAngle(v); } });
+  }
+  q("cut").addEventListener("click", () => { s.mode = "cut"; renderSections(); applySections(); });
+  q("slice").addEventListener("click", () => { s.mode = "slice"; renderSections(); applySections(); });
+  if (s.mode === "cut") q("flip").addEventListener("click", () => { s.flip = !s.flip; el.querySelector(".side").textContent = sideLabel(s); applySections(); });
+  else q("thickness").addEventListener("input", () => { const v = parseFloat(q("thickness").value); if (v > 0) { s.thickness = v; applySections(); } });
+  return el;
+}
+
+function syncSectionCard(s) {
+  const el = document.querySelector(`.sec[data-id="${s.id}"]`);
+  if (!el) return;
+  const q = (k) => el.querySelector(`[data-k=${k}]`);
+  q("posR").value = s.pos; q("pos").value = s.pos.toFixed(3);
+  if (s.type === "v") { q("angleR").value = wrap360(s.angle); q("angle").value = s.angle.toFixed(1); }
+}
+
+function selectSection(id) {
+  if (selectedId === id) return;
+  selectedId = id;
+  document.querySelectorAll(".sec").forEach((el) => el.classList.toggle("sel", +el.dataset.id === id));
+  updateHelpers();
+  attachGizmo();
+}
+
+function lookAtSection(s) {
+  const g = helpers.get(s.id);
+  if (!g) return;
+  const P = g.position.clone(), n = normalOf(s);
+  // Stand on the removed side and look at the cut face.
+  const toward = s.mode === "slice" ? n.clone() : (s.flip ? n.clone().negate() : n.clone());
+  const size = refBox().getSize(new THREE.Vector3());
+  const dist = Math.max(2, Math.max(size.x, size.y, size.z) * 1.1);
+  camera.position.copy(P).addScaledVector(toward, dist);
+  if (s.type === "h") camera.position.z += dist * 0.001; // keep "north" (+Y) at the top of the screen
+  controls.target.copy(P);
+  controls.update();
+  saveCamera();
+}
+
+$("addH").onclick = () => addSection("h");
+$("addV").onclick = () => addSection("v");
+$("showPlanes").onchange = () => { showPlanes = $("showPlanes").checked; updateHelpers(); attachGizmo(); };
+
+// ================================================================ drag gizmo
+let gizmoMode = "translate";
+function setGizmoMode(m) {
+  gizmoMode = m;
+  document.querySelectorAll("[data-gizmo]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.gizmo === m)));
+  attachGizmo();
+}
+document.querySelectorAll("[data-gizmo]").forEach((b) => (b.onclick = () => setGizmoMode(b.dataset.gizmo)));
+
+function attachGizmo() {
+  gizmo.detach();
+  if (activeTab === "model" && pointCount) {
+    gizmo.setSpace("world");
+    gizmo.setMode(gizmoMode);
+    gizmo.showX = gizmo.showY = gizmo.showZ = true;
+    gizmo.attach(modelGroup);
+  } else if (activeTab === "sections" && showPlanes) {
+    const s = state.sections.find((x) => x.id === selectedId);
+    const g = s && helpers.get(s.id);
+    if (!g) return;
+    g.visible = true;
+    const mode = s.type === "h" ? "translate" : gizmoMode;
+    gizmo.setSpace("local");
+    gizmo.setMode(mode);
+    // Move only along the plane's normal (local X); rotate only around the vertical axis.
+    gizmo.showX = mode === "translate";
+    gizmo.showY = mode === "rotate";
+    gizmo.showZ = false;
+    gizmo.attach(g);
+  }
+}
+
+function onGizmoChange() {
+  const obj = gizmo.object;
+  if (obj === modelGroup) {
+    readModelFromGroup();
+    afterModelChange();
+    return;
+  }
+  const s = state.sections.find((x) => helpers.get(x.id) === obj);
+  if (!s) return;
+  if (s.type === "v") s.angle = Math.round(wrap360(deg(obj.rotation.y)) * 10) / 10;
+  s.pos = r4(normalOf(s).dot(obj.position));
+  syncSectionCard(s);
+  applySections({ skipId: s.id });
+}
+
+addEventListener("keydown", (e) => {
+  if (e.target.closest("input, select, textarea")) return;
+  if (e.key === "w" || e.key === "W") setGizmoMode("translate");
+  if (e.key === "e" || e.key === "E") setGizmoMode("rotate");
+});
+
+// ================================================================ views
+function renderViews() {
+  const ul = $("viewList");
+  ul.innerHTML = "";
+  if (!state.views.length) {
+    ul.innerHTML = `<li><span class="empty-list" style="margin:8px 0">No saved views yet.</span></li>`;
+    return;
+  }
+  state.views.forEach((v, i) => {
+    const li = document.createElement("li");
+    const apply = Object.assign(document.createElement("button"), { className: "apply", textContent: v.name });
+    apply.onclick = () => {
+      state.sections = (v.sections || []).map(cleanSection);
+      selectedId = state.sections[0]?.id ?? null;
+      renderSections(); applySections();
+      if (v.camera) { camera.position.fromArray(v.camera.p); controls.target.fromArray(v.camera.t); controls.update(); saveCamera(); }
+      attachGizmo();
+      toast(`Showing “${v.name}”`);
+    };
+    const del = Object.assign(document.createElement("button"), { className: "icon", textContent: "✕" });
+    del.setAttribute("aria-label", `Delete view ${v.name}`);
+    del.onclick = () => { state.views.splice(i, 1); renderViews(); scheduleSave(); };
+    li.append(apply, del);
+    ul.append(li);
+  });
+}
+$("saveView").onclick = () => {
+  const name = $("viewName").value.trim() || `View ${state.views.length + 1}`;
+  const v = { name, ...snapshotView() };
+  const existing = state.views.findIndex((x) => x.name === name);
+  if (existing >= 0) state.views[existing] = v; else state.views.push(v);
+  $("viewName").value = "";
+  renderViews(); scheduleSave();
+  toast(existing >= 0 ? `Updated “${name}”` : `Saved “${name}”`);
+};
+$("viewName").onkeydown = (e) => { if (e.key === "Enter") $("saveView").click(); };
+
+$("copyLink").onclick = async () => {
+  const v = snapshotView();
+  const payload = { model: state.model, display: state.display, ...v };
+  const url = `${location.origin}${location.pathname}?bucket=${encodeURIComponent(base)}#s=${encodeHash(payload)}`;
+  try { await navigator.clipboard.writeText(url); toast("Link copied"); }
+  catch { prompt("Copy this link:", url); }
+};
+$("download").onclick = () => {
+  saveCamera();
+  const data = { ...state, sections: sectionsForSave(), saved: new Date().toISOString() };
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+  a.download = "view.json";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+$("upload").onclick = () => $("uploadFile").click();
+$("uploadFile").onchange = async () => {
+  const file = $("uploadFile").files[0];
+  if (!file) return;
+  try {
+    applyState(JSON.parse(await file.text()));
+    if (shown) buildCloud(shown);
+    scheduleSave();
+    toast("Settings loaded");
+  } catch { toast("That file couldn’t be read as settings."); }
+  $("uploadFile").value = "";
+};
+
+// ================================================================ display
+function applyDisplay() {
+  const d = state.display;
+  material.size = d.size;
+  $("size").value = d.size; $("sizeOut").textContent = d.size;
+  $("range").value = d.range; $("rangeOut").textContent = (+d.range).toFixed(1) + " m";
+  $("mode").value = d.mode;
+}
+$("size").oninput = () => { state.display.size = +$("size").value; applyDisplay(); scheduleSave(); };
+$("range").oninput = () => { state.display.range = +$("range").value; applyDisplay(); if (shown) buildCloud(shown); scheduleSave(); };
+$("mode").onchange = () => { state.display.mode = $("mode").value; if (shown) buildCloud(shown); scheduleSave(); };
+$("resetView").onclick = frameCloud;
+
+$("savePly").onclick = () => {
+  // Export what's visible: aligned, sectioned, in Z-up coordinates.
+  modelGroup.updateMatrixWorld(true);
+  const n = pointCount, pos = geometry.attributes.position.array, col = geometry.attributes.color.array;
+  const planes = material.clippingPlanes || [];
+  const v = new THREE.Vector3(), m = modelGroup.matrixWorld;
+  const b = (x) => Math.round(255 * (x <= 0.0031308 ? x * 12.92 : 1.055 * Math.pow(x, 1 / 2.4) - 0.055));
+  const rows = [];
+  for (let i = 0; i < n * 3; i += 3) {
+    v.set(pos[i], pos[i + 1], pos[i + 2]).applyMatrix4(m);
+    if (planes.some((p) => p.distanceToPoint(v) < 0)) continue;
+    rows.push(`${v.x.toFixed(4)} ${(-v.z).toFixed(4)} ${v.y.toFixed(4)} ${b(col[i])} ${b(col[i + 1])} ${b(col[i + 2])}`);
+  }
+  const head = ["ply", "format ascii 1.0", `element vertex ${rows.length}`, "property float x", "property float y", "property float z",
+    "property uchar red", "property uchar green", "property uchar blue", "end_header"];
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([head.concat(rows).join("\n")], { type: "text/plain" }));
+  a.download = snaps[current].key.split("/").pop().replace(".odp", ".ply");
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+
+// ================================================================ tabs & panel
+document.querySelectorAll("[role=tab]").forEach((t) => {
+  t.onclick = () => {
+    activeTab = t.dataset.tab;
+    document.querySelectorAll("[role=tab]").forEach((x) => x.setAttribute("aria-selected", String(x === t)));
+    document.querySelectorAll(".pane").forEach((p) => (p.hidden = p.dataset.pane !== activeTab));
+    attachGizmo();
+  };
+});
+$("toggle").onclick = () => {
+  const collapsed = $("panel").classList.toggle("collapsed");
+  $("toggle").textContent = collapsed ? "Show" : "Hide";
+  $("toggle").setAttribute("aria-expanded", String(!collapsed));
+};
+let toastTimer;
+function toast(msg) {
+  $("toast").textContent = msg;
+  $("toast").classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => $("toast").classList.remove("show"), 2200);
+}
+function showTab(name) { document.querySelector(`[role=tab][data-tab=${name}]`).click(); }
+
+// ================================================================ bucket & timeline
+let snaps = [], current = -1, shown = null, playing = null;
+const cache = new Map();
 
 function setStatus(text, isError = false) {
   $("status").textContent = text;
   $("status").classList.toggle("err", isError);
 }
-
 function getFrame(key) {
-  if (cache.has(key)) {
-    const p = cache.get(key); cache.delete(key); cache.set(key, p); return p;
-  }
-  const p = fetch(`${base}/${key}`).then((r) => {
+  if (cache.has(key)) { const p = cache.get(key); cache.delete(key); cache.set(key, p); return p; }
+  const snap = snaps.find((s) => s.key === key);
+  const depthP = fetch(`${base}/${key}`).then((r) => {
     if (!r.ok) throw new Error(`Snapshot missing from bucket (HTTP ${r.status}). It may have just been thinned out.`);
     return r.arrayBuffer();
   }).then(decode);
+  const colorP = snap && snap.color ? loadColor(`${base}/${snap.color}`).catch(() => null) : Promise.resolve(null);
+  const p = Promise.all([depthP, colorP]).then(([f, c]) => (c ? Object.assign(f, c) : f));
   p.catch(() => cache.delete(key));
   cache.set(key, p);
   while (cache.size > 40) cache.delete(cache.keys().next().value);
@@ -350,13 +1085,16 @@ async function show(i) {
   $("latest").disabled = i === snaps.length - 1;
   try {
     const f = await getFrame(s.key);
-    if (current !== i) return; // user moved on while this loaded
+    if (current !== i) return;
     shown = f;
     const n = buildCloud(f);
     $("empty").classList.add("hidden");
     $("savePly").disabled = false;
-    setStatus(`${n.toLocaleString()} points, ${f.w}×${f.h} depth`);
-    if (i + 1 < snaps.length) getFrame(snaps[i + 1].key).catch(() => {}); // preload neighbours
+    setStatus(`${n.toLocaleString()} points, ${f.w}×${f.h} depth${f.rgb ? " with colour" : ", no colour photo"}`);
+    updateHelpers(); updateSectionRanges();
+    if (needFraming) { needFraming = false; frameCloud(); }
+    attachGizmo();
+    if (i + 1 < snaps.length) getFrame(snaps[i + 1].key).catch(() => {});
     if (i > 0) getFrame(snaps[i - 1].key).catch(() => {});
   } catch (err) {
     setStatus(err.message, true);
@@ -371,58 +1109,47 @@ async function loadIndex({ quiet = false } = {}) {
     const wasLatest = current === snaps.length - 1;
     const prevKey = snaps[current]?.key;
     snaps = doc.snapshots || [];
-    if (!snaps.length) {
-      setStatus("The bucket has no snapshots yet. Start the snapshotter on the camera PC.", true);
-      return;
-    }
+    if (!snaps.length) { setStatus("The bucket has no snapshots yet. Start the snapshotter on the camera PC.", true); return; }
     $("timeline").hidden = false;
-    $("setup").open = false;
     $("slider").max = snaps.length - 1;
     $("oldest").textContent = fmtDay.format(new Date(snaps[0].t * 1000));
     $("count").textContent = `${snaps.length.toLocaleString()} snapshots`;
     if (current < 0 || wasLatest || current >= snaps.length) show(snaps.length - 1);
     else {
-      // Keep the same snapshot selected even though thinning may shift positions.
       const same = snaps.findIndex((s) => s.key === prevKey);
       if (same >= 0) { current = same; $("slider").value = same; }
       else show(Math.min(current, snaps.length - 1));
     }
-  } catch (err) {
+  } catch {
     if (quiet) return;
     setStatus("Couldn’t load index.json from that address. Check the bucket’s public URL and its CORS rule (see the README).", true);
-    $("setup").open = true;
+    showTab("bucket");
   }
 }
 
-function load() {
+async function load() {
   base = $("bucket").value.trim().replace(/\/+$/, "");
   if (!base) return;
   if (!/^https?:\/\//.test(base)) base = "https://" + base;
   try { localStorage.setItem("orbbec-bucket", base); } catch {}
   cache.clear(); snaps = []; current = -1; shown = null;
-  setStatus("Loading snapshot list…");
+  setStatus("Loading…");
+  await resolveState();
   loadIndex();
 }
 
-function stopPlay() {
-  clearInterval(playing); playing = null;
-  $("play").textContent = "Play";
-}
+function stopPlay() { clearInterval(playing); playing = null; $("play").textContent = "Play"; }
 function togglePlay() {
   if (playing) return stopPlay();
   if (current >= snaps.length - 1) show(0);
   $("play").textContent = "Pause";
-  playing = setInterval(() => {
-    if (current >= snaps.length - 1) return stopPlay();
-    show(current + 1);
-  }, 450);
+  playing = setInterval(() => { if (current >= snaps.length - 1) return stopPlay(); show(current + 1); }, 450);
 }
 
-// ---------------------------------------------------------------- wiring
 const params = new URLSearchParams(location.search);
-let saved = null;
-try { saved = localStorage.getItem("orbbec-bucket"); } catch {}
-$("bucket").value = params.get("bucket") || saved || "";
+let savedBucket = null;
+try { savedBucket = localStorage.getItem("orbbec-bucket"); } catch {}
+$("bucket").value = params.get("bucket") || savedBucket || "";
 
 $("load").onclick = load;
 $("bucket").onkeydown = (e) => { if (e.key === "Enter") load(); };
@@ -432,36 +1159,15 @@ $("next").onclick = () => { stopPlay(); show(current + 1); };
 $("latest").onclick = () => { stopPlay(); show(snaps.length - 1); };
 $("play").onclick = togglePlay;
 addEventListener("keydown", (e) => {
-  if (e.target.closest("input[type=text], select")) return;
+  if (e.target.closest("input, select, textarea")) return;
   if (e.key === "ArrowLeft") { stopPlay(); show(current - 1); }
   if (e.key === "ArrowRight") { stopPlay(); show(current + 1); }
   if (e.key === " " && snaps.length) { e.preventDefault(); togglePlay(); }
 });
-
-$("size").oninput = () => { material.size = +$("size").value; $("sizeOut").textContent = $("size").value; };
-$("range").oninput = () => { $("rangeOut").textContent = (+$("range").value).toFixed(1) + " m"; if (shown) buildCloud(shown); };
-$("mode").onchange = () => shown && buildCloud(shown);
-$("resetView").onclick = resetView;
-$("toggle").onclick = () => {
-  const collapsed = $("panel").classList.toggle("collapsed");
-  $("toggle").textContent = collapsed ? "Show" : "Hide";
-  $("toggle").setAttribute("aria-expanded", String(!collapsed));
-};
-$("savePly").onclick = () => {
-  const n = geometry.drawRange.count, pos = geometry.attributes.position.array;
-  const lines = ["ply", "format ascii 1.0", `element vertex ${n}`, "property float x", "property float y", "property float z", "end_header"];
-  for (let i = 0; i < n * 3; i += 3) lines.push(`${pos[i].toFixed(4)} ${pos[i + 1].toFixed(4)} ${pos[i + 2].toFixed(4)}`);
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([lines.join("\n")], { type: "text/plain" }));
-  a.download = snaps[current].key.split("/").pop().replace(".odp", ".ply");
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-};
-
-// Check for new snapshots every minute.
 setInterval(() => { if (base && !playing) loadIndex({ quiet: true }); }, 60000);
 
-if ($("bucket").value) load();
+applyState(defaultState());
+if ($("bucket").value) load(); else showTab("bucket");
 </script>
 </body>
 </html>
