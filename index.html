@@ -3,151 +3,207 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Astra 2 snapshots</title>
+<title>Astra 2 archive</title>
+<link rel="icon" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #17242b;
-    --panel: rgba(34, 51, 59, 0.9);
-    --line: rgba(223, 233, 236, 0.14);
-    --text: #dfe9ec;
-    --muted: #8fa6ad;
-    --accent: #f2b134;
-    --accent-ink: #1d1503;
-    --accent-soft: rgba(242, 177, 52, 0.14);
-    --bad: #ff7a6b;
-    --field: rgba(10, 20, 25, 0.45);
     color-scheme: dark;
-    font-family: "Barlow", "Segoe UI", system-ui, sans-serif;
-  }
-  @media (prefers-color-scheme: light) {
-    :root {
-      --bg: #e4ecee;
-      --panel: rgba(255, 255, 255, 0.93);
-      --line: rgba(19, 37, 44, 0.14);
-      --text: #13252c;
-      --muted: #55707a;
-      --accent: #b9780a;
-      --accent-ink: #fff8ea;
-      --accent-soft: rgba(185, 120, 10, 0.12);
-      --bad: #c23b2c;
-      --field: rgba(19, 37, 44, 0.06);
-      color-scheme: light;
-    }
+    --black: #000000;
+    --surface: #050505;
+    --surface-2: #0a0a0a;
+    --surface-3: #111111;
+    --border: #282828;
+    --border-light: #3a3a3a;
+    --text: #eeeeee;
+    --muted: #8d8d8d;
+    --muted-dark: #666666;
+    --white: #ffffff;
+    --danger: #d37b7b;
+    --interface-width: 370px;
+    --status-height: 30px;
+    font-family: "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); overflow: hidden; }
-  #scene { position: fixed; inset: 0; display: block; width: 100%; height: 100%; touch-action: none; }
+  html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--black); color: var(--text); }
+  body { min-width: 320px; font-size: 12px; }
+  button, input, select { font: inherit; }
+  [hidden] { display: none !important; }
 
-  .panel {
-    position: fixed;
-    left: max(16px, env(safe-area-inset-left));
-    bottom: max(16px, env(safe-area-inset-bottom));
-    width: min(400px, calc(100vw - 32px));
-    max-height: calc(100vh - 32px);
-    overflow-y: auto;
-    background: var(--panel);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 16px 18px 16px;
-    font-size: 15px;
-    line-height: 1.4;
+  /* ---------------------------------------------------------------- layout */
+  .viewer-panel {
+    position: absolute; inset: 0 var(--interface-width) 0 0; overflow: hidden;
+    background: radial-gradient(circle at 50% 35%, #111111 0%, #050505 55%, #000000 100%);
   }
-  .head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-  .when {
-    font-family: "Barlow Semi Condensed", "Barlow", sans-serif;
-    font-weight: 600; font-size: 30px; line-height: 1.1; margin: 0;
-    font-variant-numeric: tabular-nums;
-  }
-  .sub { color: var(--muted); margin: 4px 0 0; min-height: 21px; }
-  .sub .tier { color: var(--text); }
-  .toggle { background: none; border: 0; color: var(--muted); font: inherit; cursor: pointer; padding: 4px 6px; border-radius: 6px; flex: none; }
-  .status { color: var(--muted); margin-top: 12px; font-size: 13px; }
-  .status:empty { display: none; }
-  .status.err { color: var(--bad); }
-
-  .timeline { margin-top: 12px; }
-  .timeline input[type=range] { width: 100%; margin: 0; }
-  .ends { display: flex; justify-content: space-between; color: var(--muted); font-size: 13px; margin-top: 2px; font-variant-numeric: tabular-nums; }
-  .nav { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; margin-top: 10px; }
-
-  input[type=range] { accent-color: var(--accent); width: 100%; min-width: 0; }
-  input[type=text], input[type=number] {
-    min-width: 0; font: inherit; font-size: 14px; color: var(--text); background: var(--field);
-    border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px;
-    font-variant-numeric: tabular-nums;
-  }
-  input[type=number] { width: 100%; padding: 5px 6px; text-align: right; }
-  button { font: inherit; cursor: pointer; border-radius: 8px; }
-  button.primary { font-weight: 600; border: 0; padding: 7px 14px; background: var(--accent); color: var(--accent-ink); }
-  button.ghost { font-size: 14px; border: 1px solid var(--line); padding: 6px 10px; background: transparent; color: var(--text); }
-  button.ghost[aria-pressed=true] { background: var(--accent-soft); border-color: var(--accent); }
-  button:disabled { opacity: 0.45; cursor: default; }
-  button.icon { border: 0; background: none; color: var(--muted); padding: 4px 8px; font-size: 16px; line-height: 1; }
-  button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  select {
-    font: inherit; font-size: 14px; color: var(--text); background: var(--field);
-    border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; width: 100%;
+  #scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none; touch-action: none; }
+  .sidebar {
+    position: absolute; top: 0; right: 0; bottom: 0; width: var(--interface-width);
+    display: flex; flex-direction: column; border-left: 1px solid var(--border); background: var(--black);
   }
 
-  .tabs { display: flex; gap: 2px; margin-top: 14px; border-bottom: 1px solid var(--line); overflow-x: auto; }
-  .tabs button {
-    border: 0; background: none; color: var(--muted); font-size: 14px; font-weight: 500;
-    padding: 8px 9px 7px; border-radius: 6px 6px 0; border-bottom: 2px solid transparent; flex: none;
+  /* ---------------------------------------------------------------- header */
+  .topbar { padding: 25px 22px 17px; border-bottom: 1px solid var(--border); flex: none; }
+  .eyebrow { margin-bottom: 12px; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: 0.17em; line-height: 1.3; text-transform: uppercase; }
+  .brand-title {
+    color: var(--white); font-size: 38px; font-weight: 800; letter-spacing: -0.055em; line-height: 0.88;
+    text-transform: uppercase; margin: 0; font-variant-numeric: tabular-nums;
   }
-  .tabs button[aria-selected=true] { color: var(--text); border-bottom-color: var(--accent); }
-  .pane { padding-top: 12px; }
-  .pane[hidden] { display: none; }
+  .brand-subtitle { margin-top: 12px; color: var(--muted); font-size: 9px; font-weight: 600; letter-spacing: 0.11em; line-height: 1.6; text-transform: uppercase; }
+  .topbar-row { display: flex; gap: 6px; margin-top: 16px; flex-wrap: wrap; }
 
-  .row { display: flex; gap: 8px; align-items: center; }
-  .row > input[type=text] { flex: 1; }
-  .grow { flex: 1; }
-  .hint { color: var(--muted); font-size: 13px; margin: 10px 0 0; }
-  .field { display: grid; grid-template-columns: 5.6em 1fr 4.8em; gap: 10px; align-items: center; margin-top: 8px; }
-  .field > label { color: var(--muted); font-size: 14px; }
-  .field3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
-  .field3 label { display: block; color: var(--muted); font-size: 13px; margin-bottom: 3px; }
-  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-  .seg button { border: 0; border-radius: 0; background: none; color: var(--text); font-size: 14px; padding: 5px 11px; }
-  .seg button[aria-pressed=true] { background: var(--accent-soft); color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
-  .group-label { color: var(--muted); font-size: 13px; margin: 14px 0 0; }
+  /* ---------------------------------------------------------------- buttons & inputs */
+  button {
+    min-height: 31px; padding: 0 10px; border: 1px solid var(--border-light); border-radius: 0;
+    color: #dddddd; background: #0c0c0c; cursor: pointer;
+    font-size: 9px; font-weight: 750; letter-spacing: 0.08em; text-transform: uppercase;
+    transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  }
+  button:hover { border-color: #aaaaaa; color: #ffffff; background: #1b1b1b; }
+  button:active { background: #2a2a2a; }
+  button:disabled { opacity: 0.35; cursor: default; border-color: var(--border-light); background: #0c0c0c; color: #dddddd; }
+  button[aria-pressed=true] { border-color: #aaaaaa; color: #ffffff; background: #1b1b1b; }
+  button.primary { background: #eeeeee; color: #000000; border-color: #eeeeee; }
+  button.primary:hover { background: #ffffff; color: #000000; }
+  button.icon { min-height: 26px; width: 26px; padding: 0; border: 0; background: transparent; color: var(--muted); font-size: 13px; }
+  button.icon:hover { color: #ffffff; background: transparent; }
+  button:focus-visible, input:focus-visible, select:focus-visible, .timeline-track:focus-visible { outline: 1px solid #999999; outline-offset: 2px; }
+  .wide { width: 100%; }
 
-  .sec { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px 10px; margin-top: 10px; cursor: pointer; }
-  .sec.sel { border-color: var(--accent); background: var(--accent-soft); }
-  .sec.off { opacity: 0.6; }
-  .sec-head { display: flex; align-items: center; gap: 6px; }
-  .sec-head label { display: flex; align-items: center; gap: 8px; flex: 1; font-weight: 600; cursor: pointer; }
-  .sec-head input { accent-color: var(--accent); width: 16px; height: 16px; }
-  .sec-opts { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-  .side { color: var(--muted); font-size: 13px; }
-  .empty-list { color: var(--muted); font-size: 14px; margin: 10px 0 0; }
+  .control-label {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 14px 0 7px;
+    color: #cccccc; font-size: 9px; font-weight: 700; letter-spacing: 0.105em; line-height: 1.25; text-transform: uppercase;
+  }
+  .control-label:first-child { margin-top: 0; }
+  .control-label output, .control-label .note { color: var(--muted); font-weight: 500; }
+  input[type=text], input[type=number], select {
+    width: 100%; min-height: 28px; border: 1px solid var(--border-light); border-radius: 0;
+    color: var(--text); background: var(--surface-3); font-size: 11px; padding: 4px 7px;
+  }
+  input[type=number] { text-align: right; padding: 4px 6px; font-variant-numeric: tabular-nums; }
+  select { text-transform: uppercase; font-size: 10px; }
+  input[type=range] {
+    width: 100%; height: 3px; margin: 6px 0; appearance: none; -webkit-appearance: none; border-radius: 0; background: #323232;
+  }
+  input[type=range]::-webkit-slider-thumb { width: 12px; height: 12px; appearance: none; -webkit-appearance: none; border: 1px solid #000; border-radius: 50%; background: #eeeeee; cursor: pointer; }
+  input[type=range]::-moz-range-thumb { width: 11px; height: 11px; border: 1px solid #000; border-radius: 50%; background: #eeeeee; cursor: pointer; }
+  input[type=checkbox] { accent-color: #eeeeee; width: 13px; height: 13px; margin: 0; }
+  .check { display: flex; align-items: center; gap: 8px; color: #cccccc; font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; margin-top: 12px; }
+  .row { display: flex; gap: 6px; align-items: center; }
+  .row > * { flex: 1; min-width: 0; }
+  .row > .fixed { flex: none; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+  .slider-num { display: grid; grid-template-columns: 1fr 74px; gap: 10px; align-items: center; }
+  .mini { display: block; color: var(--muted); font-size: 8px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
+  .hint { color: var(--muted); font-size: 10px; line-height: 1.55; margin: 12px 0 0; }
+  .seg { display: flex; }
+  .seg button { flex: 1; }
+  .seg button + button { border-left: 0; }
 
-  .views { list-style: none; padding: 0; margin: 10px 0 0; }
-  .views li { display: flex; align-items: center; gap: 4px; border-top: 1px solid var(--line); }
-  .views li:last-child { border-bottom: 1px solid var(--line); }
-  .views .apply { flex: 1; text-align: left; background: none; border: 0; color: var(--text); padding: 8px 2px; border-radius: 4px; }
-  .actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  /* ---------------------------------------------------------------- inspector */
+  .inspector { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+  .inspector-section { border-bottom: 1px solid var(--border); }
+  .section-heading {
+    display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 46px;
+    padding: 0 13px; border: 0; background: transparent; color: var(--text);
+    font-size: 11px; font-weight: 750; letter-spacing: 0.12em; text-align: left;
+  }
+  .section-heading:hover { background: #0b0b0b; border: 0; }
+  .section-heading .count { color: var(--muted); font-weight: 500; margin-left: 8px; }
+  .section-heading::after { content: "+"; color: var(--muted); font-size: 14px; font-weight: 400; }
+  .section-heading[aria-expanded=true]::after { content: "−"; }
+  .section-body { padding: 2px 13px 18px; }
 
-  .panel.collapsed .body { display: none; }
+  .sec { border: 1px solid var(--border); padding: 10px; margin-top: 8px; cursor: pointer; }
+  .sec:first-child { margin-top: 12px; }
+  .sec.sel { border-color: #aaaaaa; background: #0b0b0b; }
+  .sec.off { opacity: 0.5; }
+  .sec-head { display: flex; align-items: center; gap: 8px; }
+  .sec-head label { flex: 1; display: flex; align-items: center; gap: 8px; font-size: 10px; font-weight: 750; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; }
+  .sec-head button { min-height: 24px; padding: 0 8px; }
+  .side { color: var(--muted); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .empty-list { color: var(--muted); font-size: 10px; line-height: 1.55; margin: 12px 0 0; }
 
-  .empty { position: fixed; inset: 0; display: grid; place-items: center; pointer-events: none; padding: 24px; }
-  .empty p { max-width: 34ch; text-align: center; color: var(--muted); font-size: 17px; line-height: 1.5; margin: 0; }
-  .empty.hidden { display: none; }
+  .views { list-style: none; padding: 0; margin: 12px 0 0; border-top: 1px solid var(--border); }
+  .views li { display: flex; align-items: center; border-bottom: 1px solid var(--border); }
+  .views .apply { flex: 1; text-align: left; border: 0; background: transparent; padding: 0 2px; font-size: 10px; }
+  .views .apply:hover { background: #0b0b0b; }
+
+  .progress { margin-top: 12px; }
+  .bar { height: 3px; background: #323232; }
+  .bar > div { height: 100%; width: 0; background: #eeeeee; transition: width 120ms linear; }
+  .progress-text { display: flex; justify-content: space-between; margin-top: 7px; color: var(--muted); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; }
+
+  /* ---------------------------------------------------------------- status bar */
+  .statusbar {
+    flex: none; height: var(--status-height); display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 0 13px; border-top: 1px solid var(--border); color: var(--muted-dark);
+    font-size: 8px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+  }
+  #statusMessage { overflow: hidden; color: #eeeeee; text-overflow: ellipsis; white-space: nowrap; }
+  #statusMessage.err { color: var(--danger); }
+
+  /* ---------------------------------------------------------------- viewer overlays */
+  .viewer-overlay { position: absolute; z-index: 10; top: 15px; left: 16px; right: 16px; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; pointer-events: none; }
+  .viewer-status, .viewer-help {
+    padding: 8px 10px; border: 1px solid var(--border); color: var(--muted); background: rgba(0, 0, 0, 0.72);
+    font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .viewer-status { display: flex; align-items: center; gap: 8px; }
+  .status-dot { width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; background: #555555; }
+  .status-dot.live { background: #eeeeee; box-shadow: 0 0 9px rgba(238, 238, 238, 0.65); }
+  .status-dot.err { background: var(--danger); box-shadow: 0 0 9px rgba(211, 123, 123, 0.6); }
+
+  .viewer-toolbar {
+    position: absolute; z-index: 15; bottom: 17px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 5px; padding: 5px; border: 1px solid var(--border); background: rgba(0, 0, 0, 0.82);
+  }
+  .viewer-toolbar button { min-height: 30px; min-width: 34px; padding: 0 8px; border-color: transparent; background: transparent; color: #cccccc; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+  .viewer-toolbar button:hover { border-color: var(--border-light); background: #1b1b1b; color: #fff; }
+  .viewer-toolbar svg { width: 18px; height: 18px; }
+  .viewer-toolbar .sep { width: 1px; align-self: stretch; background: var(--border); margin: 2px 2px; }
+
+  .timeline-panel { position: absolute; z-index: 16; bottom: 70px; left: 50%; width: min(620px, calc(100% - 80px)); transform: translateX(-50%); pointer-events: none; }
+  .timeline-track { position: relative; height: 38px; cursor: pointer; touch-action: none; pointer-events: auto; }
+  .timeline-line { position: absolute; top: 11px; left: 0; right: 0; height: 1px; background: rgba(255,255,255,0.55); box-shadow: 0 0 3px rgba(0,0,0,0.9); }
+  .tick { position: absolute; top: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none; }
+  .tick .mark { width: 1px; height: 5px; margin-top: 9px; background: rgba(255,255,255,0.7); box-shadow: 0 0 3px rgba(0,0,0,0.9); }
+  .tick.day .mark { height: 9px; margin-top: 7px; }
+  .tick .lbl { margin-top: 4px; color: rgba(255,255,255,0.6); text-shadow: 0 0 4px #000, 0 0 2px #000; font-size: 10px; letter-spacing: 0.06em; white-space: nowrap; text-transform: uppercase; }
+  .tick.first { transform: none; align-items: flex-start; }
+  .tick.active { z-index: 2; }
+  .tick.active .mark { width: 3px; height: 21px; margin-top: 1px; background: #ffffff; }
+  .tick.active .lbl { color: #ffffff; }
+
+  .empty { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; padding: 24px; }
+  .empty p { max-width: 36ch; text-align: center; color: var(--muted); font-size: 10px; letter-spacing: 0.1em; line-height: 1.7; text-transform: uppercase; margin: 0; }
+
+  .render-overlay {
+    position: absolute; inset: 0; z-index: 40; display: grid; place-items: center; background: rgba(0,0,0,0.88);
+  }
+  .render-box { width: min(360px, 80%); border: 1px solid var(--border); background: #000; padding: 18px; }
+  .render-box .eyebrow { margin-bottom: 8px; }
+  .render-box .big { font-size: 22px; font-weight: 800; letter-spacing: -0.04em; text-transform: uppercase; color: #fff; margin-bottom: 14px; }
+
   .toast {
-    position: fixed; top: max(16px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
-    background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px;
-    font-size: 14px; opacity: 0; transition: opacity 0.2s; pointer-events: none;
+    position: absolute; z-index: 50; top: 15px; left: 50%; transform: translateX(-50%);
+    padding: 8px 12px; border: 1px solid var(--border-light); background: #000; color: #eee;
+    font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0; transition: opacity 0.2s; pointer-events: none;
   }
   .toast.show { opacity: 1; }
-  @media (max-width: 520px) {
-    .panel { left: 12px; right: 12px; width: auto; bottom: max(12px, env(safe-area-inset-bottom)); max-height: 60vh; }
-    .when { font-size: 26px; }
-    .tabs button { padding: 8px 6px 7px; font-size: 13.5px; }
-    .empty { align-items: start; padding-top: 14vh; }
+
+  @media (max-width: 760px) {
+    :root { --sheet: 52vh; }
+    .viewer-panel { inset: 0 0 var(--sheet) 0; }
+    .sidebar { top: auto; height: var(--sheet); width: 100%; border-left: 0; border-top: 1px solid var(--border); }
+    .topbar { padding: 14px 13px 12px; }
+    .brand-title { font-size: 26px; }
+    .eyebrow { margin-bottom: 8px; }
+    .viewer-help { display: none; }
+    .timeline-panel { bottom: 58px; width: calc(100% - 32px); }
+    .viewer-toolbar { bottom: 10px; }
   }
 </style>
 <script type="importmap">
@@ -156,143 +212,230 @@
   "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
 } }
 </script>
+<script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.2/build/mp4-muxer.js"></script>
 </head>
 <body>
-<canvas id="scene"></canvas>
-<div class="empty" id="empty"><p>Enter your R2 bucket’s public address in the Bucket tab to browse its snapshots.</p></div>
-<div class="toast" id="toast" role="status"></div>
-
-<section class="panel" id="panel" aria-label="Snapshot browser">
-  <div class="head">
-    <h1 class="when" id="when">Astra 2 snapshots</h1>
-    <button class="toggle" id="toggle" aria-expanded="true">Hide</button>
+<main class="viewer-panel" id="viewerPanel">
+  <canvas id="scene"></canvas>
+  <div class="viewer-overlay">
+    <div class="viewer-status"><span class="status-dot" id="dot"></span><span id="viewerStatus">No bucket loaded</span></div>
+    <div class="viewer-help">Drag orbit · Right-drag pan · Scroll zoom</div>
   </div>
-  <p class="sub" id="sub">No bucket loaded</p>
+  <div class="empty" id="empty"><p>Enter your R2 bucket’s public address in the Bucket section to browse its snapshots.</p></div>
 
-  <div class="body">
-    <div class="timeline" id="timeline" hidden>
-      <input type="range" id="slider" min="0" max="0" value="0" aria-label="Snapshot time">
-      <div class="ends"><span id="oldest"></span><span id="count"></span><span>now</span></div>
-      <div class="nav">
-        <button class="ghost" id="prev">Older</button>
-        <button class="ghost" id="next">Newer</button>
-        <button class="ghost" id="play" aria-label="Play time-lapse">Play</button>
-        <button class="ghost" id="latest">Latest</button>
-      </div>
+  <div class="timeline-panel" id="timeline" hidden>
+    <div class="timeline-track" id="track" tabindex="0" role="slider" aria-label="Snapshot time" aria-valuemin="0">
+      <div class="timeline-line"></div>
+      <div id="ticks"></div>
     </div>
+  </div>
 
-    <div class="tabs" role="tablist">
-      <button role="tab" data-tab="sections" aria-selected="true">Sections</button>
-      <button role="tab" data-tab="model" aria-selected="false">Model</button>
-      <button role="tab" data-tab="views" aria-selected="false">Views</button>
-      <button role="tab" data-tab="display" aria-selected="false">Display</button>
-      <button role="tab" data-tab="bucket" aria-selected="false">Bucket</button>
+  <div class="viewer-toolbar" role="toolbar" aria-label="Playback">
+    <button id="prev" title="Older snapshot (←)" aria-label="Older snapshot">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </button>
+    <button id="play" title="Play time-lapse (Space)" aria-label="Play time-lapse">
+      <svg id="playIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+    </button>
+    <button id="next" title="Newer snapshot (→)" aria-label="Newer snapshot">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </button>
+    <button id="latest" title="Latest snapshot" aria-label="Latest snapshot">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 17 5-5-5-5"/><path d="m13 17 5-5-5-5"/></svg>
+    </button>
+    <span class="sep"></span>
+    <button id="fitView" title="Fit to view" aria-label="Fit to view">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>
+    </button>
+    <button id="pngQuick" title="Export PNG" aria-label="Export PNG">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+    </button>
+  </div>
+
+  <div class="render-overlay" id="renderOverlay" hidden>
+    <div class="render-box">
+      <div class="eyebrow" id="renderEyebrow">Rendering MP4</div>
+      <div class="big" id="renderBig">0 / 0</div>
+      <div class="bar"><div id="renderBar"></div></div>
+      <div class="progress-text"><span id="renderNote">Keep this tab open</span><span id="renderPct">0%</span></div>
+      <div style="margin-top:14px"><button id="renderCancel" class="wide">Cancel</button></div>
     </div>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+</main>
 
-    <!-- Sections -->
-    <div class="pane" data-pane="sections">
-      <div class="row">
-        <button class="ghost grow" id="addH">+ Horizontal</button>
-        <button class="ghost grow" id="addV">+ Vertical</button>
-      </div>
-      <div class="row" style="margin-top:10px">
-        <span class="side grow">Drag the selected plane:</span>
+<aside class="sidebar" aria-label="Archive">
+  <header class="topbar">
+    <div class="eyebrow" id="eyebrow">Orbbec Astra 2 — Point cloud archive</div>
+    <h1 class="brand-title" id="title">No<br>snapshot</h1>
+    <div class="brand-subtitle" id="subtitle">Load a bucket to begin</div>
+    <div class="topbar-row">
+      <button id="lazQuick" disabled title="Download this snapshot as LAZ">Download LAZ</button>
+      <button id="mp4Quick" disabled title="Export a time-lapse video">Export MP4</button>
+      <button id="pngTop" disabled title="Export a PNG image">PNG</button>
+    </div>
+  </header>
+
+  <div class="inspector" id="inspector">
+
+    <section class="inspector-section" data-sec="sections">
+      <button class="section-heading" aria-expanded="true">Sections<span class="count" id="secCount"></span></button>
+      <div class="section-body">
+        <div class="grid2">
+          <button id="addH">+ Horizontal</button>
+          <button id="addV">+ Vertical</button>
+        </div>
+        <div class="control-label">Drag selected plane</div>
         <div class="seg" role="group" aria-label="Drag mode">
           <button data-gizmo="translate" aria-pressed="true">Move</button>
           <button data-gizmo="rotate" aria-pressed="false">Rotate</button>
         </div>
+        <div id="sectionList"></div>
+        <label class="check"><input type="checkbox" id="showPlanes" checked> Show section planes</label>
       </div>
-      <div id="sectionList"></div>
-      <label class="row hint" style="cursor:pointer"><input type="checkbox" id="showPlanes" checked style="accent-color:var(--accent)"> Show section planes</label>
-    </div>
+    </section>
 
-    <!-- Model -->
-    <div class="pane" data-pane="model" hidden>
-      <div class="row">
-        <span class="side grow">Drag the model:</span>
+    <section class="inspector-section" data-sec="model">
+      <button class="section-heading" aria-expanded="false">Model alignment</button>
+      <div class="section-body" hidden>
+        <div class="control-label">Drag the model</div>
         <div class="seg" role="group" aria-label="Drag mode">
           <button data-gizmo="translate" aria-pressed="true">Move</button>
           <button data-gizmo="rotate" aria-pressed="false">Rotate</button>
         </div>
+        <div class="control-label">Position <span class="note">m</span></div>
+        <div class="grid3">
+          <div><span class="mini">X</span><input type="number" id="mx" step="0.01"></div>
+          <div><span class="mini">Y</span><input type="number" id="my" step="0.01"></div>
+          <div><span class="mini">Z up</span><input type="number" id="mz" step="0.01"></div>
+        </div>
+        <div class="control-label">Rotation around Z <span class="note">°</span></div>
+        <div class="slider-num">
+          <input type="range" id="mrzR" min="-180" max="180" step="0.5" aria-label="Rotation around Z">
+          <input type="number" id="mrz" step="0.5" aria-label="Rotation around Z in degrees">
+        </div>
+        <div class="control-label">Tilt <span class="note">°</span></div>
+        <div class="grid3">
+          <div><span class="mini">Tilt X</span><input type="number" id="mrx" step="0.25"></div>
+          <div><span class="mini">Tilt Y</span><input type="number" id="mry" step="0.25"></div>
+          <div style="align-self:end"><button id="resetModel" class="wide">Reset</button></div>
+        </div>
+        <p class="hint">Tilt and raise the model until the floor lies on the grid. Then Z is height above the floor and horizontal sections cut at true heights.</p>
       </div>
-      <p class="group-label">Position (m)</p>
-      <div class="field3">
-        <div><label for="mx">X</label><input type="number" id="mx" step="0.01"></div>
-        <div><label for="my">Y</label><input type="number" id="my" step="0.01"></div>
-        <div><label for="mz">Z (up)</label><input type="number" id="mz" step="0.01"></div>
-      </div>
-      <p class="group-label">Rotation (°)</p>
-      <div class="field">
-        <label for="mrzR">Around Z</label>
-        <input type="range" id="mrzR" min="-180" max="180" step="0.5">
-        <input type="number" id="mrz" step="0.5" aria-label="Rotation around Z in degrees">
-      </div>
-      <div class="field3">
-        <div><label for="mrx">Tilt X</label><input type="number" id="mrx" step="0.25"></div>
-        <div><label for="mry">Tilt Y</label><input type="number" id="mry" step="0.25"></div>
-        <div style="align-self:end"><button class="ghost" id="resetModel" style="width:100%">Reset</button></div>
-      </div>
-      <p class="hint">Tilt and raise the model until the floor lies on the grid. Then Z is the height above the floor, and horizontal sections cut at true heights.</p>
-    </div>
+    </section>
 
-    <!-- Views -->
-    <div class="pane" data-pane="views" hidden>
-      <div class="row">
-        <input type="text" id="viewName" placeholder="Name, e.g. Floor plan" aria-label="View name">
-        <button class="primary" id="saveView">Save view</button>
-      </div>
-      <p class="hint" style="margin-top:6px">A view stores the sections and camera position. The model alignment is shared by all views.</p>
-      <ul class="views" id="viewList"></ul>
-      <p class="group-label">Share or back up</p>
-      <div class="actions">
-        <button class="ghost" id="copyLink">Copy link</button>
-        <button class="ghost" id="download">Download settings</button>
-        <button class="ghost" id="upload">Load settings…</button>
+    <section class="inspector-section" data-sec="views">
+      <button class="section-heading" aria-expanded="false">Views<span class="count" id="viewCount"></span></button>
+      <div class="section-body" hidden>
+        <div class="row">
+          <input type="text" id="viewName" placeholder="Name, e.g. floor plan" aria-label="View name">
+          <button class="fixed primary" id="saveView">Save</button>
+        </div>
+        <ul class="views" id="viewList"></ul>
+        <div class="control-label">Share / back up</div>
+        <div class="grid2">
+          <button id="copyLink">Copy link</button>
+          <button id="download">Download view.json</button>
+        </div>
+        <button id="upload" class="wide" style="margin-top:7px">Load settings file…</button>
         <input type="file" id="uploadFile" accept=".json,application/json" hidden>
+        <p class="hint">Everything saves automatically in this browser. Upload view.json to the bucket and every viewer starts with this alignment, these sections and views.</p>
       </div>
-      <p class="hint">Everything saves automatically in this browser. To give everyone the same alignment, sections and views, upload the downloaded file to your bucket named <b>view.json</b>.</p>
-    </div>
+    </section>
 
-    <!-- Display -->
-    <div class="pane" data-pane="display" hidden>
-      <div class="field">
-        <label for="size">Point size</label>
+    <section class="inspector-section" data-sec="display">
+      <button class="section-heading" aria-expanded="false">Appearance</button>
+      <div class="section-body" hidden>
+        <div class="control-label">Point size <output id="sizeOut">2</output></div>
         <input type="range" id="size" min="1" max="8" step="0.5" value="2">
-        <output id="sizeOut">2</output>
-      </div>
-      <div class="field">
-        <label for="range">Max distance</label>
+        <div class="control-label">Max distance <output id="rangeOut">5.0 m</output></div>
         <input type="range" id="range" min="0.5" max="8" step="0.1" value="5">
-        <output id="rangeOut">5.0 m</output>
-      </div>
-      <div class="field">
-        <label for="mode">Colour by</label>
-        <select id="mode" style="grid-column: 2 / 4">
+        <div class="control-label">Colour by</div>
+        <select id="mode">
           <option value="camera">Camera colour</option>
           <option value="depth">Distance from camera</option>
           <option value="height">Height</option>
-          <option value="mono">Single colour</option>
+          <option value="mono">White</option>
         </select>
+        <label class="check"><input type="checkbox" id="showGrid" checked> Show grid</label>
       </div>
-      <div class="actions">
-        <button class="ghost" id="resetView">Fit to view</button>
-        <button class="ghost" id="savePly" disabled>Save visible points (.ply)</button>
-      </div>
-    </div>
+    </section>
 
-    <!-- Bucket -->
-    <div class="pane" data-pane="bucket" hidden>
-      <div class="row">
-        <input type="text" id="bucket" spellcheck="false" autocomplete="off" aria-label="Bucket public address" placeholder="https://pub-….r2.dev">
-        <button class="primary" id="load">Load</button>
-      </div>
-      <p class="hint">The bucket’s public URL from Cloudflare (R2 › your bucket › Settings › Public access).</p>
-    </div>
+    <section class="inspector-section" data-sec="export">
+      <button class="section-heading" aria-expanded="false">Export</button>
+      <div class="section-body" hidden>
+        <div class="control-label">Point cloud <span class="note">LAZ · LAS 1.2 · Z up · RGB</span></div>
+        <label class="check" style="margin-top:0"><input type="checkbox" id="lazSections"> Apply active sections</label>
+        <button id="lazOne" class="wide" style="margin-top:10px" disabled>Download this snapshot (.laz)</button>
 
-    <div class="status" id="status" role="status"></div>
+        <div class="control-label">Range</div>
+        <div class="grid2">
+          <div><span class="mini">From</span><select id="rangeFrom"></select></div>
+          <div><span class="mini">To</span><select id="rangeTo"></select></div>
+        </div>
+        <button id="lazZip" class="wide" style="margin-top:7px" disabled>Download range as .laz files (.zip)</button>
+
+        <div class="control-label">Time-lapse video <span class="note">MP4</span></div>
+        <div class="grid2">
+          <div><span class="mini">Resolution</span>
+            <select id="vidRes">
+              <option value="1280x720">1280 × 720</option>
+              <option value="1920x1080" selected>1920 × 1080</option>
+              <option value="3840x2160">3840 × 2160</option>
+            </select></div>
+          <div><span class="mini">Speed</span>
+            <select id="vidSpeed">
+              <option value="1">1 snapshot / s</option>
+              <option value="2">2 snapshots / s</option>
+              <option value="4" selected>4 snapshots / s</option>
+              <option value="8">8 snapshots / s</option>
+              <option value="15">15 snapshots / s</option>
+            </select></div>
+        </div>
+        <div class="control-label">Camera</div>
+        <div class="seg" role="group" aria-label="Video camera">
+          <button data-vcam="fixed" aria-pressed="true">Current view</button>
+          <button data-vcam="orbit" aria-pressed="false">Orbit 360°</button>
+        </div>
+        <label class="check"><input type="checkbox" id="vidLabel" checked> Date &amp; time in video</label>
+        <button id="mp4" class="wide primary" style="margin-top:12px" disabled>Export MP4</button>
+        <p class="hint" id="mp4Note">Uses the current view, alignment, sections and colours. The range above sets which snapshots are included.</p>
+
+        <div class="control-label">Image</div>
+        <div class="row">
+          <select id="pngScale" aria-label="PNG resolution">
+            <option value="1">1× view</option>
+            <option value="2" selected>2× view</option>
+            <option value="3">3× view</option>
+          </select>
+          <button id="png" class="fixed" disabled>Export PNG</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="inspector-section" data-sec="bucket">
+      <button class="section-heading" aria-expanded="false">Bucket</button>
+      <div class="section-body" hidden>
+        <div class="control-label">Public R2 address</div>
+        <div class="row">
+          <input type="text" id="bucket" spellcheck="false" autocomplete="off" aria-label="Bucket public address" placeholder="https://pub-….r2.dev">
+          <button class="fixed primary" id="load">Load</button>
+        </div>
+        <p class="hint">Cloudflare › R2 › your bucket › Settings › Public access.</p>
+      </div>
+    </section>
   </div>
-</section>
 
+  <footer class="statusbar">
+    <span id="statusMessage">Ready</span>
+    <div id="bucketName">—</div>
+  </footer>
+</aside>
+
+<script>
+// LAZ compressor: laz-perf (Apache-2.0, github.com/hobuinc/laz-perf) compiled to WebAssembly.
+window.LAZ_WASM_B64 = "AGFzbQEAAAABkQEWYAN/f38Bf2AAAGAEf39/fwBgBn9/f39/fwBgBX9/f39/AGABfwBgAn9/AGADf39/AGABfwF+YAF/AX9gBH9+f38Bf2AEf39/fwF/YAJ/fwF/YAR/fn5/AGADf35/AX5gBX9/f39/AX9gAAF/YAZ+fn5+f38AYAV/fn5+fgBgBH5+fn4Bf2ACfn4Bf2ACf3wAAmYDFndhc2lfc25hcHNob3RfcHJldmlldzEIZmRfY2xvc2UACRZ3YXNpX3NuYXBzaG90X3ByZXZpZXcxB2ZkX3NlZWsAChZ3YXNpX3NuYXBzaG90X3ByZXZpZXcxCGZkX3dyaXRlAAsDywHJAQEBCQwMAA0MBwkFDAkJCgsAAA4OCQALDAkADAAPBwQBBgEMDAYQCQkJBQYFAAkBCQUFBQUACwICAgQEBAMDBQUJBQEFDBAQBQwGBRAMBRABBQkGBQUHDwwJAQULAQkFCQYFBQcMCQEAAAkGBQUFBQUHBQAMBQQJCQsGCQIFBgcFDAwBCwIJCQkJBQEHBwcGBQAMDAkFCwYFCAYGAQYGAQsBDAYHAAwGDAwGBgYLBgkMCQkMBQwGCQwMCRESEhISExITBgYUFBUNDQQFAXABLy8FBAEAgQIGHgR/AUGAgIAIC38AQYCAgAgLfwBBAAt/AEHknoAICweOAQwGbWVtb3J5AgALX2luaXRpYWxpemUABAlsel9tYWxsb2MAQwdsel9mcmVlAEQIbHpfcmVzZXQARQhsel9jaHVuawBHCmx6X291dF9wdHIASApsel9vdXRfbGVuAEkIbHpfdGFibGUASwxsel90YWJsZV9wdHIATgZsel92bHIATwpsel92bHJfcHRyAFEJOQEAQQELLhAUFjI1MzQ3QD46Nj89O0FCSmBTVFVWV1haW2FiY2RlZmdoMW9sbnZ0lgGXAZsBnAGdAQqIxALJAQQAEGkLIwACQEEAKAKMnYCIAEUNAAALQQBBATYCjJ2AiAAQg4CAgAALOgEBfwJAIABBEGpBBBCKgICAACIBRQ0AIAEgAK1CBYZCBIQ3AwggAUEQag8LQQBBMDYCkJ2AiABBAAsyAQF/QQAhAgN/AkACQCABIAJGDQAgACACai0AAA0BIAIhAQsgAQ8LIAJBAWohAgwACwsOACAAIAFBfxCIgICAAAtjAQN/AkAgACABRg0AQQAhAwJAAkADQCAAIANqLQAAIgQgASADai0AACIFRw0BQQAhBSAERQ0CIAMgAk8NAiADQQFqIQMMAAsLIAMgAk8NAUF/QQEgBCAFSRshBQsgBQ8LQQALswICBH8BfiOAgICAAEEQayIEJICAgIAAAkACQCABIAIgASACEMKBgIAARQ0AQQAhBQwBC0EAIQUgAkIwiKciBkH//wFxIgdB//8BRg0AAkAgBw0AIAEgAkL///////8/g4RQDQEgBCABIAIgAkIQhiABQjCIhCIIeSABQhCGeULAAHwgCEIAUhunIgVBAWpB/wBxEMuBgIAAIAQpAwBCACAFQf8AcUHvAEkiBxshAUGCgH8gBWshBSACQoCAgICAgICAgH+DIAQpAwhC////////P4NCACAHG4RCgICAgICAgP8/hCECDAELIAJC////////v4CAf4NCgICAgICAgP8/hCECIAZB//8BcUGCgH9qIQULIAMgBTYCACAAIAI3AwggACABNwMAIARBEGokgICAgAAL6AEBA39BACECAkBBfyAAQQRqIgMgAyAASRsiAEEBIAF0IgEgACABSxsiAUF/amciAEUNAAJAAkBBICAAayIAQf//A3FBfWoiA0ENTw0AQgEgAK1C//8Dg4anIQQgA0ECdCIAKALInYCIACIBRQ0BIABByJ2AiABqIAQgAWpBfGooAgA2AgAgAQ8LIAFBg4AEakEQdhCMgICAACECDAELIABBlJ2AiABqIQECQCAAKAKUnYCIACIAQf//A3ENAEEBEIyAgIAAIgBFDQEgASAAIARqNgIAIAAPCyABIAAgBGo2AgAgAA8LIAILpgEBAX8CQEEgIAFBBGoiAUEBIAJ0IgIgASACSxsiAkF/amdrIgFB//8DcUF9aiIDQQ1PDQAgAEIBIAGshqdqQXxqIANBAnQiAigCyJ2AiAA2AgAgAiAANgLInYCIAA8LIABCAUEgIAJBg4AEakEQdkF/amdrIgKtQv//A4OGp0EQdGpBfGogAkH//wNxQQJ0IgIoAvydgIgANgIAIAIgADYC/J2AiAALZAECf0IBQSAgAEF/amdrIgCtQv//A4OGpyEBAkAgAEH//wNxQQJ0IgIoAvydgIgAIgBFDQAgAkH8nYCIAGogAUEQdCAAakF8aigCADYCACAADwtBACABQAAiAEEQdCAAQX9GGws0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Sw0ACwsgAC0AAEEgcQ0AIAVB8ANqIBQgABCYgICAABoLAkAgAC0AAEEgcQ0AIBMgFyAAEJiAgIAAGgsgG0GAwABHDQAgGSAVTA0AAkAgEiAVayITQYACIBNBgAJJIhQbIhVFDQAgBUHwA2pBICAV/AsACwJAIBQNAANAAkAgAC0AAEEgcQ0AIAVB8ANqQYACIAAQmICAgAAaCyATQYB+aiITQf8BSw0ACwsgAC0AAEEgcQ0AIAVB8ANqIBMgABCYgICAABoMAAsLC0EAQT02ApCdgIgAC0F/IRELIAVBwD9qJICAgIAAIBELnAUBAX8jgICAgABBEGsiAySAgICAAAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAAkACQAJAIAFBd2oOEgABAgUDBAYHCAkKCwwNDg8QERILIAIgAigCACIBQQRqNgIAIAAgASgCADYCAAwRCyACIAIoAgAiAUEEajYCACAAIAE0AgA3AwAMEAsgAiACKAIAIgFBBGo2AgAgACABNQIANwMADA8LIAIgAigCACIBQQRqNgIAIAAgATQCADcDAAwOCyACIAIoAgAiAUEEajYCACAAIAE1AgA3AwAMDQsgAiACKAIAQQdqQXhxIgFBCGo2AgAgACABKQMANwMADAwLIAIgAigCACIBQQRqNgIAIAAgATIBADcDAAwLCyACIAIoAgAiAUEEajYCACAAIAEzAQA3AwAMCgsgAiACKAIAIgFBBGo2AgAgACABMAAANwMADAkLIAIgAigCACIBQQRqNgIAIAAgATEAADcDAAwICyACIAIoAgBBB2pBeHEiAUEIajYCACAAIAEpAwA3AwAMBwsgAiACKAIAIgFBBGo2AgAgACABNQIANwMADAYLIAIgAigCAEEHakF4cSIBQQhqNgIAIAAgASkDADcDAAwFCyACIAIoAgBBB2pBeHEiAUEIajYCACAAIAEpAwA3AwAMBAsgAiACKAIAIgFBBGo2AgAgACABNAIANwMADAMLIAIgAigCACIBQQRqNgIAIAAgATUCADcDAAwCCyACIAIoAgBBB2pBeHEiAUEIajYCACADIAErAwAQyYGAgAAgACADKQMINwMIIAAgAykDADcDAAwBCyACIAIoAgBBD2pBcHEiAUEQajYCACAAIAEpAwA3AwAgACABKQMINwMICyADQRBqJICAgIAAC6MBAQF/I4CAgIAAQYACayIFJICAgIAAAkAgAiADTA0AIARBgMAEcQ0AAkAgAiADayIDQYACIANBgAJJIgIbIgRFDQAgBSABIAT8CwALAkAgAg0AA0ACQCAALQAAQSBxDQAgBUGAAiAAEJiAgIAAGgsgA0GAfmoiA0H/AUsNAAsLIAAtAABBIHENACAFIAMgABCYgICAABoLIAVBgAJqJICAgIAACwMAAAs3AQF/I4CAgIAAQRBrIgIkgICAgAAgAiABNgIMI4GAgIAAKAIAIAAgARCegICAABoQooCAgAAACxgAI4KAgIAAQfCOgIgAakEAEKOAgIAAAAuzAQEDfyOAgICAAEEQayICJICAgIAAIAIgAToADwJAAkAgACgCECIDDQACQCAAEJeAgIAARQ0AQX8hAwwCCyAAKAIQIQMLAkAgACgCFCIEIANGDQAgACgCQCABQf8BcSIDRg0AIAAgBEEBajYCFCAEIAE6AAAMAQsCQCAAIAJBD2pBASAAKAIgEYCAgIAAgICAgABBAUYNAEF/IQMMAQsgAi0ADyEDCyACQRBqJICAgIAAIAMLRAECfwJAIABB/wFxIgIgASgCQEYNACABKAIUIgMgASgCEEYNACABIANBAWo2AhQgAyAAOgAAIAIPCyABIAIQpYCAgAALXgECfyOAgICAAEEQayICJICAgIAAI4KAgIAAQZ2QgIgAakELQQEjgYCAgAAoAgAiAxCZgICAABogAiABNgIMIAMgACABEJ6AgIAAGkEKIAMQpoCAgAAaEKKAgIAAAAsLACODgICAACgCAAsaAAJAIAAQqoCAgAAiAA0AEKSAgIAAAAsgAAtFAQF/IABBASAAQQFLGyEBA38CQAJAIAEQhYCAgAAiAA0AEKiAgIAAIgANAUEAIQALIAAPCyAAEYGAgIAAgICAgAAMAAsLCgAgABCpgICAAAsKACAAEI2AgIAACwoAIAAQrICAgAALCgAgABCsgICAAAufAQEDfwJAQQAoAuiegIgAIgMNAEHwnoCIACEDQQBB8J6AiAA2AuiegIgACwJAAkBBACgC7J6AiAAiBEEgRg0AIAMhBQwBCwJAQYQCQQEQjoCAgAAiBQ0AQX8PC0EAIQRBACAFNgLonoCIACAFIAM2AgALQQAgBEEBajYC7J6AiAAgBSAEQQJ0aiIEQYQBaiABNgIAIARBBGogADYCAEEACwQAIAALGAAjgoCAgABB/4+AiABqQQAQp4CAgAAACwoAIAAQsICAgAALAgALAgALEgAgABCwgICAAEEIEK2AgIAACxIAIAAQsICAgABBDBCtgICAAAvYAQEDfyOAgICAAEHAAGsiAySAgICAAAJAAkAgACgCBCABKAIERw0AQQEhBAwBC0EAIQQgASOCgICAACIFQZicgIgAaiAFQaScgIgAakEAELiAgIAAIgFFDQAgA0EIakEAQTj8CwAgA0EBOgA7IANBATYCNCADQX82AhAgAyAANgIMIAMgATYCBCABIANBBGogAigCAEEBIAEoAgAoAhwRgoCAgACAgICAAAJAIAMoAhwiAUEBRw0AIAIgAygCFDYCAAsgAUEBRiEECyADQcAAaiSAgICAACAEC/gEAQV/I4CAgIAAQcAAayIEJICAgIAAIAAgACgCACIFQXhqKAIAIgZqIQcCQAJAIAVBfGooAgAiCCgCBCACKAIERw0AQQAhBQJAIANBAEgNACAHQQAgBkEAIANrRhshBQwCCyADQX5GDQEgBEIANwIUIARCADcCHCAEQgA3AiQgBEIANwIsIARBADYCPCAEQoGAgICAgICAATcCNCAEIAM2AhAgBCABNgIMIAQgADYCCCAEIAI2AgQgAiAEQQRqIAcgB0EBQQAgAigCACgCFBGDgICAAICAgIAAIAdBACAEKAIcQQFGGyEFDAELAkAgA0EASA0AIAAgA2siBSAHSA0AIARCADcCLCAEQgA3AiQgBEIANwIcIARCADcCFCAEQQA2AjwgBEKBgICAgICAgAE3AjQgBCADNgIQIAQgAjYCDCAEIAU2AgggBCAINgIEIAggBEEEaiAHIAdBAUEAIAgoAgAoAhQRg4CAgACAgICAACAEKAIcDQELIARCADcCFCAEQgA3ADMgBEIANwIsIARCADcCJCAEQgA3AhwgBEEANgI8IARBAToAOyAEIAM2AhAgBCABNgIMIAQgADYCCCAEIAI2AgQgCCAEQQRqIAdBAUEAIAgoAgAoAhgRhICAgACAgICAAEEAIQUCQAJAIAQoAigOAgABAgsgBCgCGEEAIAQoAiRBAUYbQQAgBCgCIEEBRhtBACAEKAIsQQFGGyEFDAELAkAgBCgCHEEBRg0AAkAgBCgCLEUNAEEAIQUMAgsCQCAEKAIg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+KCAiABBACgC9KCAiABrCzQBAX8CQEEAKAKMoYCIACIBRQ0AQQAgATYCkKGAiAAgAUEAKAKUoYCIACABaxCtgICAAAsLpQIBAn8jgICAgABBwABrIgIkgICAgAAgAkEANgI8IAJCADcCNAJAIAFBAUgNAANAIAJCADcDICACIAA1AgA3AyggAEEEaiEAIAJBNGogAkEgahDMgICAACABQX9qIgENAAsLQQBBACgCjKGAiAA2ApChgIgAIAJBxJaAiAA2AgggAiACQQhqNgIYIAJBCGogAkE0akEAEIGBgIAAAkACQAJAIAIoAhgiACACQQhqRw0AQRAhAQwBCyAARQ0BQRQhAQsgACAAKAIAIAFqKAIAEYWAgIAAgICAgAALQQAoAoyhgIgAIQFBACgCkKGAiAAhAwJAIAIoAjQiAEUNACACIAA2AjggACACKAI8IABrEK2AgIAACyACQcAAaiSAgICAACADIAFrC44BAQN/I4CAgIAAQSBrIgIkgICAgAAgAiAAKAIEIgM2AgwgACgCCCEEIAIgADYCGCACIAE2AhQgAiACQQxqNgIQAkACQCADIARPDQAgAyABKQMINwMIIAMgASkDADcDACADQRBqIQMMAQsgAkEQahDNgICAACACKAIMIQMLIAAgAzYCBCACQSBqJICAgIAAC78CAQd/I4CAgIAAQRBrIgEkgICAgAACQCAAKAIIIgIoAgQgAigCACIDa0EEdSIEQQFqIgVBgICAgAFPDQAgACgCBCEGIAEgAigCCCADayIDQQN1IgcgBSAHIAVLG0H/////ACADQfD///8HSRsgBCACQQhqEN6AgIAAIgUoAggiAyAGKQMINwMIIAMgBikDADcDACAFIANBEGo2AgggBSgCBCACKAIEIAIoAgAiA2siBmshBAJAIAZFDQAgBCADIAb8CgAACyACKAIIIQMgAiAFKAIMNgIIIAIgBSgCCCIHNgIEIAIoAgAhBiACIAQ2AgAgBSADNgIMIAUgBjYCBCAFIAY2AgggBSAGNgIAAkAgBkUNACAGIAMgBmsQrYCAgAALIAAoAgAgBzYCACABQRBqJICAgIAADwsQ34CAgAAACwsAQQAoAoyhgIgAC5sBAQF/I4CAgIAAQdAAayICJICAgIAAIAJBxABqIAJBCGogAEEAIAEQmIGAgAAiARCfgYCAAEGAoYCIABDQgICAAEEAIAIoAkQ2AoChgIgAQQAgAikCSDcChKGAiAAgAkEANgJMIAJCADcCRCABEJaBgIAAGkEAKAKAoYCIACEBQQAoAoShgIgAIQAgAkHQAGokgICAgAAgACABaws2AQF/AkAgACgCACIBRQ0AIAAgATYCBCABIAAoAgggAWsQrYCAgAAgAEEANgIIIABCADcCAAsLCwBBACgCgKGAiAALEQBBuI6AiABBABCjgICAAAALDAAgAEEIEK2AgIAACxkBAX9BCBCpgICAACIBQZCVgIgANgIAIAELDQAgAUGQlYCIADYCAAsCAAsXACAAIAAoAgAoAgQRhYCAgACAgICAAAsrAEH0oICIAEEAKAL4oICIACABKAIAIgEgASACKAIAIgJqIAIQ2YCAgAAaC9cEAQZ/AkACQCAEQQFIDQACQCAEIAAoAggiBSAAKAIEIgZrSg0AAkAgBCAGIAFrIgdMDQACQAJAIAIgB2ogA0cNACAGIQgMAQsgAiABayEJIAYhCCAGIQUDQCAFIAkgCGotAAA6AAAgBUEBaiEFIAkgCEEBaiIIaiADRw0ACwsgACAINgIEIAdBAUgNAiAIIAEgBGprIQMCQAJAIAggBGsiCSAGSQ0AIAghBQwBCyAIIQUDQCAFIAktAAA6AAAgBUEBaiEFIAlBAWoiCSAGRw0ACwsgACAFNgIEAkAgA0UNACAIIANrIAEgA/wKAAALIAdFDQIgASACIAf8CgAAIAEPCyAGIAEgBGprIQkgBiEIAkAgBiAEayIFIAZPDQAgBiEIA0AgCCAFLQAAOgAAIAhBAWohCCAFQQFqIgUgBkcNAAsLIAAgCDYCBAJAIAlFDQAgBiAJayABIAn8CgAACyAERQ0BIAEgAiAE/AoAACABDwsgBiAAKAIAIghrIARqIgNBf0wNASABIAhrIQkCQAJAIAUgCGsiB0EBdCIFIAMgBSADSxtB/////wcgB0H/////A0kbIgoNAEEAIQUMAQsgChCpgICAACEFCyAFIAlqIQMCQCAERQ0AIAMgAiAE/AoAAAsgAyAEaiEEAkAgBiABayIGRQ0AIAQgASAG/AoAAAsgACABNgIEAkAgCUUNACAFIAggCfwKAAALIAAgBSAKajYCCCAAIAQgBmo2AgQgACAFNgIAAkAgCEUNACAIIAcQrYCAgAALIAMhAQsgAQ8LENyAgIAAAAsWACAAQQRqQQAgASgCBEGsloCIAEYbCwgAQaSWgIgACw8AQeeNgIgAEN2AgIAAAAsrAQF/I4CAgIAAQRBrIgEkgICAgAAgASAANgIAQb2PgIgAIAEQo4CAgAAAC28BAX8gAEIANwIIIABCADcCAAJAAkACQCABDQBBACEEDAELIAFBgICAgAFPDQEgACABQQR0EKmAgIAAIgQ2AgALIAAgBCABQQR0ajYCDCAAIAQgAkEEdGoiATYCCCAAIAE2AgQgAA8LENKAgIAAAAsPAEHnjYCIABDdgICAAAALBAAgAAsMACAAQQgQrYCAgAALGQEBf0EIEKmAgIAAIgFBxJaAiAA2AgAgAQsNACABQcSWgIgANgIACwIACxcAIAAgACgCACgCBBGFgICAAICAgIAACysAQYyhgIgAQQAoApChgIgAIAEoAgAiASABIAIoAgAiAmogAhDZgICAABoLFgAgAEEEakEAIAEoAgRBsJeAiABGGwsIAEGol4CIAAuDAQBBAEIANwL0oICIAEEAQQA2AvyggIgAQZCAgIAAQQBBgICAiAAQr4CAgAAaQQBCADcCgKGAiABBAEEANgKIoYCIAEGRgICAAEEAQYCAgIgAEK+AgIAAGkEAQgA3AoyhgIgAQQBBADYClKGAiABBkoCAgABBAEGAgICIABCvgICAABoL4QEBA38jgICAgABBIGsiAySAgICAACAAQciXgIgANgIAQcgnEKmAgIAAIQQCQAJAIAEoAhAiBQ0AIANBADYCGAwBCwJAIAUgAUcNACADIANBCGo2AhggBSADQQhqIAUoAgAoAgwRhoCAgACAgICAAAwBCyABQQA2AhAgAyAFNgIYCyAAIAQgA0EIaiACEOuAgIAANgIEAkACQAJAIAMoAhgiASADQQhqRw0AQRAhBQwBCyABRQ0BQRQhBQsgASABKAIAIAVqKAIAEYWAgIAAgICAgAALIANBIGokgICAgAAgAAuhAwECfyOAgICAAEEgayIDJICAgIAAAkACQAJAAkAgASgCECIEDQAgA0EANgIYDAELAkAgBCABRg0AIAFBADYCECADIAQ2AhgMAgsgAyADQQhqNgIYIAQgA0EIaiAEKAIAKAIMEYaAgIAAgICAgAAgAygCGCIEDQELIABBADYCEAwBCwJAAkACQCAEIANBCGpHDQAgACAANgIQIAQgACAEKAIAKAIMEYaAgIAAgICAgAAgAygCGCIEIANBCGpHDQFBECEBDAILIAAgBDYCECADQQA2AhgMAgsgBEUNAUEUIQELIAQgBCgCACABaigCABGFgICAAICAgIAACyAAQQA2AiwgAEEANgI4IABBAToANCAAIAA2AjxBgBAQq4CAgAAhBCAAQX82AjAgAEEANgIoIAAgBDYCGCAAIAQ2AiAgACAEQYAQaiIENgIcIAAgBDYCJCAAQcAAaiAAQRhqIgQQtYGAgAAaIABB0CJqIAQQsoGAgAAaIABByCRqIAQQuoGAgAAaIABBiCdqIAQgAhCngYCAABogA0EgaiSAgICAACAACxwAIABByJeAiAA2AgAgAEEEakEAEO2AgIAAIAALKwEBfyAAKAIAIQIgACABNgIAAkAgAkUNACACEImBgIAAQcgnEK2AgIAACwsDAAALEAAgACgCBEEYahDwgICAAAulAgEEfyOAgICAAEEQayIBJICAgIAAIABBgICABEGAgAIgACgCGCICQYCAgBBLIgMbNgIYIABBgICACEGAgIAEIAMbIgMgACgCEGoiBDYCEAJAIAQgA08NACAAEPGAgIAACyAAEPKAgIAAAkAgACgCDCAAKAIERg0AIAAoAiQgACgCAEGACGpBgAgQ84CAgAALAkAgACgCCCIEIAAoAgAiA0YNACAAKAIkIAMgBCADaxDzgICAAAsgACgCJCEDIAFBADoADSADIAFBDWpBARDzgICAACAAKAIkIQMgAUEAOgAOIAMgAUEOakEBEPOAgIAAAkAgAkGBgIAQSQ0AIAAoAiQhACABQQA6AA8gACABQQ9qQQEQ84CAgAALIAFBEGokgICAgAALYAECfwJAIAAoAgQgACgCCCIBIAEgACgCAEYbQX9qIgEtAAAiAkH/AUcNAANAIAFBADoAACAAKAIEIAEgASAAKAIARhtBf2oiAS0AACICQf8BRg0ACwsgASACQQFqOgAAC2cBAn8gACgCECEBA0AgACAAKAIIIgJBAWo2AgggAiABQRh2OgAAAkAgACgCCCAAKAIMRw0AIAAQjIGAgAALIAAgACgCEEEIdCIBNgIQIAAgACgCGEEIdCICNgIYIAJBgICACEkNAAsLYAEBfyOAgICAAEEQayIDJICAgIAAIAMgAjYCCCADIAE2AgwCQCAAKAIQIgINABCNgYCAAAALIAIgA0EMaiADQQhqIAIoAgAoAhgRh4CAgACAgICAACADQRBqJICAgIAACxUAIAAQ7ICAgAAaIABBCBCtgICAAAvTAQECfyOAgICAAEEgayIDJICAgIAAAkACQCABKAIQIgQNACADQQA2AhgMAQsCQCAEIAFHDQAgAyADQQhqNgIYIAQgA0EIaiAEKAIAKAIMEYaAgIAAgICAgAAMAQsgAUEANgIQIAMgBDYCGAsgACADQQhqIAIQ6oCAgAAhBAJAAkACQCADKAIYIgEgA0EIakcNAEEQIQIMAQsgAUUNAUEUIQILIAEgASgCACACaigCABGFgICAAICAgIAACyAEQeCXgIgANgIAIANBIGokgICAgAAgBAs5ACAAKAIEQcAAaiABELeBgIAAIQEgACgCBEHIJGogARC7gYCAACEBIAAoAgRBiCdqIAEQqIGAgAAL3AEBBH8jgICAgABBMGsiASSAgICAAAJAIAAoAiAgACgCJEcNAAJAIAAoAghFDQAgAEEgaiECQQAhAwNAIAIgAUEEaiAAKAIQQQFqQQBBABD7gICAACIEEPyAgIAAIAQQ/YCAgAAaIANBAWoiAyAAKAIISQ0ACwsgACgCEEUNACAAQcAAaiECQQEhAwNAIAIgAUEEakEBIAMgACgCDCIEIAMgBEkbdEEAQQAQ+4CAgAAiBBD8gICAACAEEP2AgIAAGiADQQFqIgMgACgCEE0NAAsLIAFBMGokgICAgAALTgACQAJAIAMgAmsiAiAAKAIYTg0AIAAoAhQgAmohAgwBCyACIAAoAhxMDQAgAiAAKAIUayECCyAAIAEgAiAAKAIgIARBLGxqEP6AgIAAC88BAQZ/I4CAgIAAQRBrIgEkgICAgAACQCAAKAIgIgIgACgCJCIDRg0AIANBVGohAwNAIAMQ/YCAgAAhBCADQVRqIQMgAiAERw0ACwsgAEEgaiEFIAAgAjYCJCAAQcAAaiEGAkAgACgCQCICIAAoAkQiA0YNACADQVRqIQMDQCADEP2AgIAAIQQgA0FUaiEDIAIgBEcNAAsLIAAgAjYCRCABIAY2AgggAUEIahD/gICAACABIAU2AgwgAUEMahD/gICAACABQRBqJICAgIAAIAALPgEBfwJAIAAoAgAiAUUNACABEK6AgIAACyAAKAIgIQEgAEEANgIgAkAgAUUNACAAQSBqIAEQgIGAgAALIAALogMBAn8gAEEANgIQIABCADcCCCAAIAI6AAQgACABNgIAAkAgAUH/b2pBgHBNDQAgACABQX9qNgIgAkACQCACDQAgAUERSQ0AQXMhAgNAIAJBEmohBCACQQFqIgUhAiABQQEgBHRLDQALIABBACAFazYCKCAAQQEgBUEPaiICdDYCJEEEIAJ0QcwAahCFgICAACICQcQAakFAcSIEQXxqIAI2AgAgACAENgIQDAELIABBADYCECAAQgA3AiQLIAFBAnRBxABqIgIQhYCAgAAiBEHEAGpBQHEiBUF8aiAENgIAIAAgBTYCCCACEIWAgIAAIgRBxABqQUBxIgJBfGogBDYCACAAIAE2AhhBACEEIABBADYCFCAAIAI2AgwCQAJAIANFDQADQCACIAMoAgA2AgAgA0EEaiEDIAJBBGohAiAEQQFqIgQgACgCAEkNAAwCCwtBACEDA0AgAkEBNgIAIAJBBGohAiADQQFqIgMgACgCAEkNAAsLIAAQgoGAgAAgACAAKAIAQQZqQQF2IgI2AhwgACACNgIYIAAPCxCigICAAAALPQEBfwJAAkAgACgCBCICIAAoAghPDQAgAiABEIOBgIAAQSxqIQEMAQsgACABEISBgIAAIQELIAAgATYCBAtXAQF/AkAgACgCCCIBRQ0AIAFBfGooAgAQjYCAgAALAkAgACgCDCIBRQ0AIAFBfGooAgAQjYCAgAALAkAgACgCECIBRQ0AIAFBfGooAgAQjYCAgAALIAALzQEBAn8gAEEgQQAgAmsgAkF/aiIEIAJBAUgbIgVna0EAIAUbIgU2AgAgASADIAUQjoGAgAACQAJAIAAoAgAiA0UNACADQSBGDQEgAkF/IAN0QX9zaiAEIAJBAEgbIQICQCADIAAoAgwiBUsNACABIAAoAkAgA0EsbGpBVGogAhCOgYCAAA8LIAEgACgCQCADQSxsakFUaiACIAMgBWsiAHUQjoGAgAAgASAAIAJBfyAAdEF/c3EQj4GAgAAPCyABIABBLGogAhCQgYCAAAsLcgEFfwJAIAAoAgAiASgCACICRQ0AIAIhAyABIQQCQCACIAEoAgQiBUYNACAFQVRqIQMDQCADEP2AgIAAIQQgA0FUaiEDIAIgBEcNAAsgACgCACIEKAIAIQMLIAEgAjYCBCADIAQoAgggA2sQrYCAgAALC1IBAn8CQCABRQ0AAkACQAJAIAEoAhAiAiABRw0AQRAhAwwBCyACRQ0BQRQhAwsgAiACKAIAIANqKAIAEYWAgIAAgICAgAALIAFBGBCtgICAAAsLxwUBBH8jgICAgABBsAFrIgMkgICAgAACQAJAAkACQCAAKAIQIgQNACADQQA2ApABDAELAkAgBCAARg0AIABBADYCECADIAQ2ApABDAILIAMgA0GAAWo2ApABIAQgA0GAAWogBCgCACgCDBGGgICAAICAgIAAIAMoApABIgQNAQsgA0EANgKoAQwBCwJAAkACQCAEIANBgAFqRw0AIAMgA0GYAWo2AqgBIAQgA0GYAWogBCgCACgCDBGGgICAAICAgIAAIAMoApABIgQgA0GAAWpHDQFBECEADAILIANBADYCkAEgAyAENgKoAQwCCyAERQ0BQRQhAAsgBCAEKAIAIABqKAIAEYWAgIAAgICAgAALIANBADYCbCADQQA2AnggA0EBOgB0IAMgA0GYAWo2AnxBgBAQq4CAgAAhBCADQX82AnAgA0EANgJoIAMgBDYCWCADIAQ2AmAgAyAEQYAQaiIENgJcIAMgBDYCZCADQQI2AkggA0EANgI0IANCADcCLCADQoKAgICAATcCFCADQoCAgICABDcCDCADQoCggIAQNwJAIANBADYCVCADQgA3AkwgA0KEgICAwAA3AjggA0KAgICA+P////8ANwIkIANCIDcCHCADQQxqEPeAgIAAAkAgASgCACIEIAEoAgQiBUYNAEEAIQZBACEAA0ACQCACRQ0AIANBDGogA0HYAGogBiAEKAIAIgFBABD4gICAACABIQYLIANBDGogA0HYAGogACAEQQhqKAIAIgFBARD4gICAACABIQAgBEEQaiIEIAVHDQALCyADQdgAahDwgICAACADQQxqEPmAgIAAGiADQdgAahD6gICAABoCQAJAAkAgAygCqAEiBCADQZgBakcNAEEQIQAMAQsgBEUNAUEUIQALIAQgBCgCACAAaigCABGFgICAAICAgIAACyADQbABaiSAgICAAAuuBAEMfyAAIAAoAhQgACgCGGoiATYCFAJAIAFBgYACSQ0AQQAhAiAAQQA2AhQgACgCDCEDA0AgAyADKAIAQQFqQQF2IgE2AgAgACAAKAIUIAFqIgE2AhQgA0EE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B0EsEKmAgIAAQYACQQBBABD7gICAACECIABCADcCtAYgACACNgKEByAAQgA3ArwGIABCADcCxAYgAEIANwLMBkEAIQIDQCAAIAJqIgFBiAdqQSwQqYCAgABBgAJBAEEAEPuAgIAANgIAIAFBiA9qQSwQqYCAgABBgAJBAEEAEPuAgIAANgIAIAFBiBdqQSwQqYCAgABBgAJBAEEAEPuAgIAANgIAIAJBBGoiAkGACEcNAAsgAAvLAQEDfwJAIAAoAoAHIgFFDQAgARD9gICAAEEsEK2AgIAACwJAIAAoAoQHIgFFDQAgARD9gICAAEEsEK2AgIAAC0EAIQEDQAJAIAAgAWoiAkGIB2ooAgAiA0UNACADEP2AgIAAQSwQrYCAgAALAkAgAkGID2ooAgAiA0UNACADEP2AgIAAQSwQrYCAgAALAkAgAkGIF2ooAgAiAkUNACACEP2AgIAAQSwQrYCAgAALIAFBBGoiAUGACEcNAAsgAEHUBmoQ/YCAgAAaIAAL9gQAIAAQs4GAgAAiAEECNgLMHyAAQQA2ArgfIABCADcCsB8gAEKEgICAgAE3ApgfIAAgATYCjB8gAEKAoICAEDcCxB8gAEEANgLYHyAAQgA3AtAfIABChICAgMAANwK8HyAAQoCA/v///x83AqgfIABCkICAgICAwAA3AqAfIABCgICAgIACNwKQHyAAQQg2AugfIABBADYChCAgAEKQgICAEDcC4B8gAEIANwL8HyAAQoGAgIAgNwKUICAAQYAgNgKQICAAQoSAgIDAADcCiCAgAEEANgKkICAAQgA3ApwgIABCkICAgICAwAA3AuwfIABCgID+////HzcC9B8gAEEANgLcHyAAQQg2ArQgIABBADYC0CAgAEKggICAIDcCrCAgAEIANwLIICAAQoGAgIAgNwLgICAAQYAgNgLcICAAQoSAgIDAADcC1CAgAEEANgLwICAAQgA3AuggIABCgICAgPj/////ADcCwCAgAEIgNwK4ICAAQoGAgIAgNwKsISAAQoCAgIDAADcCnCEgAEIANwKUISAAQQg2AoAhIABCoICAgOACNwL4ICAAQQA2AqggIABCADcCtCEgAEKEgICAgIAENwKkISAAQQA2ArwhIABCgICAgPj/////ADcCjCEgAEIgNwKEISAAQoGAgIAgNwL4ISAAQgA3AuAhIABCoICAgMACNwLEISAAQQA2AughIABBCDYCzCEgAEEANgL0ICAAQYAgNgL0ISAAQQQ2AvAhIABBADYCiCIgAEIANwKAIiAAQQQ2AuwhIABCgICAgPj/////ADcC2CEgAEIgNwLQISAAQQA6AIwiIABBADYCwCEgAAs+ACAAQZAfahD3gICAACAAQdwfahD3gICAACAAQaggahD3gICAACAAQfQgahD3gICAACAAQcAhahD3gICAAAvwCwENfyOAgICAAEEgayICJICAgIAAIAJCADcBDiACQgA3AwggAkEIaiABELiBgIAAAkAgAC0AjCINACAAELaBgIAAIABBAToAjCILAkACQCAALQCIHw0AIAAgAikDCDcCACAAIAIpAxA3AgggACACKAIYNgIQIABBAToAiB8gACgCjB8oAiQgAUEUEPOAgIAADAELIAAoAowfIABB1AZqQQBBCCAALQAPIAItABdGIgMbQQBBECAAIAItABYiBEEDdkEHcSIFQQN0IARBB3FyIgYtAICagIgAIgdBAXRqIggvARQgAi8BFEYiCRtyQSBBACAALQAOIARzIgRBBnZBAXEgBEGAAXFBB3ZyIARBA3YgBHJBB3FyIgQbckEAQQQgAC0AECACLQAYRiIKG3JBAEECIAAtABEgAi0AGUYiCxtyIAAvARIiDCACLwEaIg1HchCOgYCAACAGLQDAmoCIACEOAkAgBEUNACAAKAKMHyAAIAAtAA5BAnRqKAKIByACLQAWEI6BgIAACwJAIAkNACAAQZAfaiAAKAKMHyAIQRRqIgQvAQAgAi8BFCAHQQMgB0EDSRsQ+ICAgAAgBCACLwEUOwEACwJAIAMNACAAKAKMHyAAIAAtAA9BAnRqKAKIDyACLQAXEI6BgIAACwJAIAoNACAAKAKMHyAAIAItABZBBHZBBHFqKAKAByACLQAYIAAtABBrQf8BcRCOgYCAAAsCQCALDQAgACgCjB8gACAALQARQQJ0aigCiBcgAi0AGRCOgYCAAAsCQCAMIA1GDQAgAEHcH2ogACgCjB8gAC8BEiACLwEaQQAQ+ICAgAALIABBqCBqIAAoAowfIAAgB0EYbGoiBigCPCACKAIIIAAoAgBrIgMgBUEBRiIFEPiAgIAAIAZBNGohBCAGKAI8IQkCQAJAAkACQCAGLQBIQQFHDQAgBCgCDCEGAkAg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AX8CfgF/I4CAgIAAQRBrIgEkgICAgAAgASAAKQMAIgIgACkDCCIDIAN5IAJ5QsAAfCADQgBSG6dBcWoiBEH/AHEQy4GAgAAgACABKQMANwMAIAAgASkDCDcDCCABQRBqJICAgIAAQQEgBEH/AXFrC+wCAQx+IAUgAkL/////D4MiBiAAQiCIIgd+IgggAkIgiCICIABC/////w+DIgB+fCIJQiCGIgogBiAAfnwiCzcDACAFIAsgClStIAFC/////w+DIgogBn4iDCACIAd+fCINIANC/////w+DIgsgAH58Ig4gCUIgiCAJIAhUrUIghoR8IgkgBiABQiCIIgF+Ig8gCiACfnwiCCAAIANCIIgiBn58IgAgCyAHfnwiA0IghnwiEHw3AwggBCAHIAZ+IhEgAiABfnwiByALIAp+fCICIA0gDFStIA4gDVStfHwiDSALIAF+IgwgCiAGfnwiCkIghnwiCyADQiCIIAggD1StIAAgCFStfCADIABUrXxCIIaEfCIAIAkgDlStIBAgCVStfHwiAzcDACAEIAcgEVStIAIgB1StfCAGIAF+fCANIAJUrXwgCiAMVK1CIIYgCkIgiIR8IAsgDVStfCAAIAtUrXwgAyAAVK18NwMIC8QIBAF/An4DfwF+I4CAgIAAQYABayIFJICAgIAAIAUgBEL///////8/gyIGNwNYIAUgAzcDUCAFIAJC////////P4M3A0ggBSABNwNAIAQgAoVCgICAgICAgICAf4MhByAEQjCIp0H//wFxIQgCQAJAAkACQCACQjCIp0H//wFxIglBgYB+akGCgH5JDQBBACEKIAhBgYB+akGCgH5PDQELAkAgAVAgAkL///////////8AgyILQoCAgICAgMD//wBUIAtCgICAgICAwP//AFEbDQAgAkKAgICAgIAghCEHDAMLAkAgA1AgBEL///////////8AgyICQoCAgICAgMD//wBUIAJCgICAgICAwP//AFEbDQAgBEKAgICAgIAghCEHIAMhAQwDCwJAAkACQAJAAkAgASALQoCAgICAgMD//wCFhEIAUg0AIAMgAoRQRQ0BQoCAgICAgOD//wAhBwwGCyADIAJCgICAgICAwP//AIWEUA0DIAEgC4RQDQVCACEBIAMgAoRCAFENBkEAIQogC0KAgICAgIDAAFQNAQwCCyAHQoCA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axDKgYCAACAFKQMIIAmEIQQgBSkDACEDDAELIAetQjCGIARCA4hC////////P4OEIAmEIANCA4ggBEI9hoQiCCADQgeDIgNCBFatfCIEIAhUrXwgA0IEUa0gBINCAYMiCCAEfCIDIAhUrXwhBAsgACADNwMAIAAgBDcDCCAFQeAAaiSAgICAAAtIAQF/I4CAgIAAQRBrIgUkgICAgAAgBSABIAIgAyAEEMCBgIAAIAUpAwghBCAAIAUpAwA3AwAgACAENwMIIAVBEGokgICAgAALYwAgAEIAUiABQv///////////wCDIgBCgICAgICAwP//AFYgAEKAgICAgIDA//8AURsgAkIAUiADQv///////////wCDIgBCgICAgICAwP//AFYgAEKAgICAgIDA//8AURtyC5YCAgF/An5BgJuAiAAhBQJAIAFCAFIgAkL///////////8AgyIGQoCAgICAgMD//wBWIAZCgICAgICAwP//AFEbDQAgA1AgBEL///////////8AgyIHQoCAgICAgMD//wBUIAdCgICAgICAwP//AFEbRQ0AAkAgAyABhCAHIAaEhFBFDQBBiJuAiAAhBQwBCwJAAkACQCAEIAKDQgBTDQAgASADVCACIARTIAIgBFEbRQ0BDAILIAEgA1YgAiAEVSACIARRGw0BQYibgIgAQZibgIgAIAEgA4UgAiAEhYRQGyEFDAILQYibgIgAQZibgIgAIAEgA4UgAiAEhYRQGyEFDAELQZCbgIgAIQULIAAgBSkCADcCAAtLAQN/I4CAgIAAQRBrIgQkgICAgAAgBEEIaiAAIAEgAiADEMOBgIAAIAQtAAwhBSAEKAIIIQYgBEEQaiSAgICAACAGQQEgBUEBcRsLhwECAX8CfiOAgICAAEEQayICJICAgIAAAkACQCABDQBCACEDQgAhBAwBCyACIAGtQgBB8AAgAWdBH3MiAWsQy4GAgAAgAa1CMIYgAikDCEKAgICAgIDAAIV8QoCAgICAgMD/P3whBCACKQMAIQMLIAAgAzcDACAAIAQ3AwggAkEQaiSAgICAAAuqAQMBfwJ+AX8jgICAgABBEGsiAiSAgICAAAJAAkAgAQ0AQgAhA0IAIQQMAQsgAiABIAFBH3UiBXMgBWsiBa1CAEHwACAFZ0EfcyIFaxDLgYCAACAFrUIwhiACKQMIQoCAgICAgMAAhXxCgICAgICAwP8/fEKAgICAgICAgIB/QgAgAUEASBuEIQQgAikDACEDCyAAIAM3AwAgACAENwMIIAJBEGokgICAgAALhgEBBH8jgICAgABBEGsiAiSAgICAAEEAIQMCQCABQgBTDQAgAUIwiKciBEH//wFxIgVB//8ASQ0AQX8hAyAFQeH/fmpBYEkNACACIAAgAUL///////8/g0KAgICAgIDAAIRB7wAgBGtB/wBxEMqBgIAAIAIoAgAhAwsgAkEQaiSAgICAACADC5wBAQR/I4CAgIAAQRBrIgIkgICAgABBACEDAkAgAUIwiKciBEH//wFxIgVB//8ASQ0AAkAgBUHi/35qQWBLDQAgAUI/h6dB/////wdzIQMMAQsgAiAAIAFC////////P4NCgICAgICAwACEQe8AIARrQf8AcRDKgYCAACACKAIAIgNBACADayABQn9VGyEDCyACQRBqJICAgIAAIAMLkAIDAX8DfgF/I4CAgIAAQRBrIgIkgICAgAACQAJAIAG9IgNC////////////AIMiBEKAgICAgICAeHxC/////////+//AFYNACAEQjyGIQUgBEIEiEKAgICAgICAgDx8IQQMAQsCQCAEQoCAgICAgID4/wBUDQAgBEI8hiEFIARCBIhCgICAgICAwP//AIQhBAwBCwJAIARQRQ0AQgAhBUIAIQQMAQsgAiAEQgAgBHmnIgZBMWoQy4GAgABBgfgAIAZB9QBqQf8AcWutQjCGIAIpAwhCgICAgICAwACFhCEEIAIpAwAhBQsgACAFNwMAIAAgBCADQoCAgICAgICAgH+DhDcDCCACQRBqJICAgIAAC00BAX4CQAJAIANBP0wNACACIAOtiCEBQgAhAgwBCyADRQ0AIAJBACADa62GIAEgA60iBIiEIQEgAiAEiCECCyAAIAE3AwAgACACNwMIC00BAX4CQAJAIANBP0wNACABIAOthiECQgAhAQwBCyADRQ0AIAFBACADa62IIAIgA60iBIaEIQIgASAEhiEBCyAAIAE3AwAgACACNwMICwufHQIAQYCAgAgLoBugDQABU3VjY2VzcwBJbGxlZ2FsIGJ5dGUgc2VxdWVuY2UARG9tYWluIGVycm9yAFJlc3VsdCBub3QgcmVwcmVzZW50YWJsZQBOb3QgYSB0dHkAUGVybWlzc2lvbiBkZW5pZWQAT3BlcmF0aW9uIG5vdCBwZXJtaXR0ZWQATm8gc3VjaCBmaWxlIG9yIGRpcmVjdG9yeQBObyBzdWNoIHByb2Nlc3MARmlsZSBleGlzdHMAVmFsdWUgdG9vIGxhcmdlIGZvciBkYXRhIHR5cGUATm8gc3BhY2UgbGVmdCBvbiBkZXZpY2UAT3V0IG9mIG1lbW9yeQBSZXNvdXJjZSBidXN5AEludGVycnVwdGVkIHN5c3RlbSBjYWxsAFJlc291cmNlIHRlbXBvcmFyaWx5IHVuYXZhaWxhYmxlAEludmFsaWQgc2VlawBDcm9zcy1kZXZpY2UgbGluawBSZWFkLW9ubHkgZmlsZSBzeXN0ZW0ARGlyZWN0b3J5IG5vdCBlbXB0eQBDb25uZWN0aW9uIHJlc2V0IGJ5IHBlZXIAT3BlcmF0aW9uIHRpbWVkIG91dABDb25uZWN0aW9uIHJlZnVzZWQASG9zdCBpcyB1bnJlYWNoYWJsZQBBZGRyZXNzIGluIHVzZQBCcm9rZW4gcGlwZQBJL08gZXJyb3IATm8gc3VjaCBkZXZpY2Ugb3IgYWRkcmVzcwBObyBzdWNoIGRldmljZQBOb3QgYSBkaXJlY3RvcnkASXMgYSBkaXJlY3RvcnkAVGV4dCBmaWxlIGJ1c3kARXhlYyBmb3JtYXQgZXJyb3IASW52YWxpZCBhcmd1bWVudABBcmd1bWVudCBsaXN0IHRvbyBsb25nAFN5bWJvbGljIGxpbmsgbG9vcABGaWxlbmFtZSB0b28gbG9uZwBUb28gbWFueSBvcGVuIGZpbGVzIGluIHN5c3RlbQBObyBmaWxlIGRlc2NyaXB0b3JzIGF2YWlsYWJsZQBCYWQgZmlsZSBkZXNjcmlwdG9yAE5vIGNoaWxkIHByb2Nlc3MAQmFkIGFkZHJlc3MARmlsZSB0b28gbGFyZ2UAVG9vIG1hbnkgbGlua3MATm8gbG9ja3MgYXZhaWxhYmxlAFJlc291cmNlIGRlYWRsb2NrIHdvdWxkIG9jY3VyAFN0YXRlIG5vdCByZWNvdmVyYWJsZQBQcmV2aW91cyBvd25lciBkaWVkAE9wZXJhdGlvbiBjYW5jZWxlZABGdW5jdGlvbiBub3QgaW1wbGVtZW50ZWQATm8gbWVzc2FnZSBvZiBkZXNpcmVkIHR5cGUASWRlbnRpZmllciByZW1vdmVkAExpbmsgaGFzIGJlZW4gc2V2ZXJlZABQcm90b2NvbCBlcnJvcgBCYWQgbWVzc2FnZQBOb3QgYSBzb2NrZXQARGVzdGluYXRpb24gYWRkcmVzcyByZXF1aXJlZABNZXNzYWdlIHRvbyBsYXJnZQBQcm90b2NvbCB3cm9uZyB0eXBlIGZvciBzb2NrZXQAUHJvdG9jb2wgbm90IGF2YWlsYWJsZQBQcm90b2NvbCBub3Qgc3VwcG9ydGVkAE5vdCBzdXBwb3J0ZWQAQWRkcmVzcyBmYW1pbHkgbm90IHN1cHBvcnRlZCBieSBwcm90b2NvbABBZGRyZXNzIG5vdCBhdmFpbGFibGUATmV0d29yayBpcyBkb3duAE5ldHdvcmsgdW5yZWFjaGFibGUAQ29ubmVjdGlvbiByZXNldCBieSBuZXR3b3JrAENvbm5lY3Rpb24gYWJvcnRlZABObyBidWZmZXIgc3BhY2UgYXZhaWxhYmxlAFNvY2tldCBpcyBjb25uZWN0ZWQAU29ja2V0IG5vdCBjb25uZWN0ZWQAT3BlcmF0aW9uIGFscmVhZHkgaW4gcHJvZ3Jlc3MAT3BlcmF0aW9uIGluIHByb2dyZXNzAFN0YWxlIGZpbGUgaGFuZGxlAFF1b3RhIGV4Y2VlZGVkAE11bHRpaG9wIGF0dGVtcHRlZABDYXBhYmlsaXRpZXMgaW5zdWZmaWNpZW50AAAAAAAAAAAAAAAAAAAAdQJOANYB4gS5BBgBjgXtAhYE8gCXAwEDOAWvAYIBTwMvBB4A1AWiABIDHgPCAd4DCACsBQABZALxAWUFNAKMAs8CLQNMBOMFnwL4BBwFCAWxAksFFQJ4AFICPAPxA+QAwwN9BMwAqgN5BSQCbgFtAyIEqwREAPsBrgCDA2AA5QEHBJQEXgQrAFgBOQGSAMIFmwFDAkYB9gUtKyAgIDBYMHgALTBYKzBYIDBYLTB4KzB4IDB4AGxhenBlcmYgdmFyaWFudAB2ZWN0b3IAbmFuAGJhc2ljX3N0cmluZwBpbmYAYmFkX2Z1bmN0aW9uX2NhbGwgd2FzIHRocm93biBpbiAtZm5vLWV4Y2VwdGlvbnMgbW9kZQBiYWRfYXJyYXlfbmV3X2xlbmd0aCB3YXMgdGhyb3duIGluIC1mbm8t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";
+</script>
 <script type="module">
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -302,30 +445,34 @@ const $ = (id) => document.getElementById(id);
 const rad = (d) => d * Math.PI / 180, deg = (r) => r * 180 / Math.PI;
 const wrap180 = (a) => ((a + 180) % 360 + 360) % 360 - 180;
 const wrap360 = (a) => ((a % 360) + 360) % 360;
-const accent = () => new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue("--accent").trim());
+const r4 = (x) => Math.round(x * 1e4) / 1e4;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// Coordinates shown to the person are Z-up (X right, Y forward, Z up).
-// three.js is Y-up, so: three.x = X, three.y = Z, three.z = -Y.
+// Coordinates shown and exported are Z-up (X right, Y forward, Z up).
+// three.js is Y-up: three.x = X, three.y = Z, three.z = -Y.
+
+let exporting = false, cancelExport = false;
 
 // ================================================================ scene
-const renderer = new THREE.WebGLRenderer({ canvas: $("scene"), antialias: true, alpha: true });
+const canvas = $("scene");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.localClippingEnabled = true;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(60, 1, 0.01, 200);
-const controls = new OrbitControls(camera, $("scene"));
+const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 camera.position.set(1.1, 0.7, 1.0);
 controls.target.set(0, 0, -2);
 
-const grid = new THREE.GridHelper(10, 20, 0x6f8a92, 0x6f8a92);
-grid.material.transparent = true; grid.material.opacity = 0.2;
+const grid = new THREE.GridHelper(10, 20, 0x3a3a3a, 0x222222);
 scene.add(grid);
 
 const modelGroup = new THREE.Group();
 modelGroup.rotation.order = "YXZ";
 scene.add(modelGroup);
-modelGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.03, 0.03), new THREE.MeshBasicMaterial({ color: 0xf2b134, wireframe: true })));
+const sensorBox = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.03, 0.03), new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true }));
+modelGroup.add(sensorBox);
 
 let capacity = 0;
 const geometry = new THREE.BufferGeometry();
@@ -334,7 +481,7 @@ const cloud = new THREE.Points(geometry, material);
 cloud.frustumCulled = false;
 modelGroup.add(cloud);
 
-const gizmo = new TransformControls(camera, $("scene"));
+const gizmo = new TransformControls(camera, canvas);
 gizmo.setSize(0.8);
 scene.add(gizmo);
 gizmo.addEventListener("dragging-changed", (e) => {
@@ -349,14 +496,18 @@ function ensureCapacity(n) {
   geometry.setAttribute("position", new THREE.BufferAttribute(new Float32Array(n * 3), 3));
   geometry.setAttribute("color", new THREE.BufferAttribute(new Float32Array(n * 3), 3));
 }
+function viewSize() { return [canvas.clientWidth || 1, canvas.clientHeight || 1]; }
 function resize() {
-  renderer.setSize(innerWidth, innerHeight, false);
-  camera.aspect = innerWidth / innerHeight;
+  if (exporting) return;
+  const [w, h] = viewSize();
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
   camera.updateProjectionMatrix();
 }
-addEventListener("resize", resize);
+new ResizeObserver(resize).observe(canvas);
 resize();
-renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
+const loop = () => { controls.update(); renderer.render(scene, camera); };
+renderer.setAnimationLoop(loop);
 
 // ================================================================ colour helpers
 function turbo(t, out, i) {
@@ -370,6 +521,11 @@ const SRGB_TO_LINEAR = new Float32Array(256).map((_, i) => {
   const c = i / 255;
   return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
 });
+const LIN_TO_SRGB8 = new Uint8Array(4096).map((_, i) => {
+  const x = i / 4095;
+  return Math.round(255 * (x <= 0.0031308 ? x * 12.92 : 1.055 * Math.pow(x, 1 / 2.4) - 0.055));
+});
+const toSrgb8 = (x) => LIN_TO_SRGB8[Math.min(4095, Math.max(0, Math.round(x * 4095)))];
 
 // ================================================================ snapshot decoding
 async function inflate(bytes) {
@@ -379,7 +535,7 @@ async function inflate(bytes) {
 async function decode(buf) {
   const dv = new DataView(buf);
   const magic = String.fromCharCode(...new Uint8Array(buf, 0, 4));
-  if (magic !== "ODP1") throw new Error("This file isn’t a snapshot from the Orbbec snapshotter.");
+  if (magic !== "ODP1") throw new Error("Not a snapshot from the Orbbec snapshotter");
   const f = {
     w: dv.getUint16(4, true), h: dv.getUint16(6, true),
     fx: dv.getFloat32(8, true), fy: dv.getFloat32(12, true),
@@ -433,9 +589,9 @@ function buildCloud(f) {
       if (Z < z0) z0 = Z; if (Z > z1) z1 = Z;
       if (useCam) {
         const ci = (row + Math.min(cw - 1, Math.floor(u * sx))) * 4;
-        const r = rgb[ci], g = rgb[ci + 1], bl = rgb[ci + 2];
-        if (r + g + bl < 6) { col[j] = col[j + 1] = col[j + 2] = 0.18; } // outside the colour camera's view
-        else { col[j] = SRGB_TO_LINEAR[r]; col[j + 1] = SRGB_TO_LINEAR[g]; col[j + 2] = SRGB_TO_LINEAR[bl]; }
+        const r = rgb[ci], g = rgb[ci + 1], b = rgb[ci + 2];
+        if (r + g + b < 6) { col[j] = col[j + 1] = col[j + 2] = 0.12; } // outside the colour camera's view
+        else { col[j] = SRGB_TO_LINEAR[r]; col[j + 1] = SRGB_TO_LINEAR[g]; col[j + 2] = SRGB_TO_LINEAR[b]; }
       }
       n++;
     }
@@ -450,15 +606,13 @@ function buildCloud(f) {
   return n;
 }
 
-// Colours that don't come from the photo (also re-run when the model moves, for height).
 function colorize() {
   const n = pointCount, pos = geometry.attributes.position?.array, col = geometry.attributes.color?.array;
   if (!n || !pos) return;
   let mode = state.display.mode;
-  if (mode === "camera") mode = "depth"; // depth-only snapshot
+  if (mode === "camera") mode = "depth";
   if (mode === "mono") {
-    const c = accent();
-    for (let i = 0; i < n * 3; i += 3) { col[i] = c.r; col[i + 1] = c.g; col[i + 2] = c.b; }
+    col.fill(0.85, 0, n * 3);
   } else if (mode === "height") {
     modelGroup.updateMatrixWorld(true);
     const e = modelGroup.matrixWorld.elements;
@@ -482,13 +636,11 @@ function scheduleRecolor() {
   recolorQueued = true;
   requestAnimationFrame(() => { recolorQueued = false; colorize(); });
 }
-
 function updateWorldBox() {
   if (!pointCount) return;
   modelGroup.updateMatrixWorld(true);
   worldBox = localBox.clone().applyMatrix4(modelGroup.matrixWorld);
 }
-
 function frameCloud() {
   if (!worldBox) return;
   const c = worldBox.getCenter(new THREE.Vector3());
@@ -502,10 +654,8 @@ function frameCloud() {
 // ================================================================ state & persistence
 const defaultState = () => ({
   model: { x: 0, y: 0, z: 0, rz: 0, rx: 0, ry: 0 },
-  sections: [],
-  camera: null,
-  views: [],
-  display: { size: 2, range: 5, mode: "camera" },
+  sections: [], camera: null, views: [],
+  display: { size: 2, range: 5, mode: "camera", grid: true },
 });
 let state = defaultState();
 let base = "";
@@ -527,33 +677,27 @@ function saveCamera() {
   state.camera = { p: camera.position.toArray().map(r4), t: controls.target.toArray().map(r4) };
   scheduleSave();
 }
-const r4 = (x) => Math.round(x * 1e4) / 1e4;
 controls.addEventListener("end", saveCamera);
 
 let nextId = 1;
-function normalizeState(s) {
-  const d = defaultState();
-  const out = {
-    model: { ...d.model, ...(s?.model || {}) },
-    sections: Array.isArray(s?.sections) ? s.sections : [],
-    camera: s?.camera || null,
-    views: Array.isArray(s?.views) ? s.views : [],
-    display: { ...d.display, ...(s?.display || {}) },
-  };
-  out.sections = out.sections.map((x) => cleanSection(x));
-  return out;
-}
 function cleanSection(x) {
   return {
     id: nextId++,
     name: x.name || (x.type === "v" ? "Vertical" : "Horizontal"),
     type: x.type === "v" ? "v" : "h",
-    pos: +x.pos || 0,
-    angle: +x.angle || 0,
+    pos: +x.pos || 0, angle: +x.angle || 0,
     mode: x.mode === "slice" ? "slice" : "cut",
-    thickness: +x.thickness || 0.1,
-    flip: !!x.flip,
-    on: x.on !== false,
+    thickness: +x.thickness || 0.1, flip: !!x.flip, on: x.on !== false,
+  };
+}
+function normalizeState(s) {
+  const d = defaultState();
+  return {
+    model: { ...d.model, ...(s?.model || {}) },
+    sections: (Array.isArray(s?.sections) ? s.sections : []).map(cleanSection),
+    camera: s?.camera || null,
+    views: Array.isArray(s?.views) ? s.views : [],
+    display: { ...d.display, ...(s?.display || {}) },
   };
 }
 const sectionsForSave = () => state.sections.map(({ id, ...rest }) => rest);
@@ -564,40 +708,32 @@ function applyState(s) {
   applyModel({ save: false });
   applyDisplay();
   renderSections();
-  applySections();
+  applySections({ save: false });
   renderViews();
   if (state.camera) {
     camera.position.fromArray(state.camera.p);
     controls.target.fromArray(state.camera.t);
     controls.update();
     needFraming = false;
-  } else {
-    needFraming = true;
-  }
+  } else needFraming = true;
   attachGizmo();
 }
-
-// The settings that make up a "view" and a shared link.
-function snapshotView() {
-  saveCamera();
-  return { sections: sectionsForSave(), camera: state.camera };
-}
+function snapshotView() { saveCamera(); return { sections: sectionsForSave(), camera: state.camera }; }
 
 function encodeHash(obj) {
-  const json = JSON.stringify(obj);
-  return btoa(String.fromCharCode(...new TextEncoder().encode(json))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const bytes = new TextEncoder().encode(JSON.stringify(obj));
+  let bin = ""; bytes.forEach((b) => (bin += String.fromCharCode(b)));
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 function decodeHash(str) {
-  const b64 = str.replace(/-/g, "+").replace(/_/g, "/");
-  const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+  const bytes = Uint8Array.from(atob(str.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
   return JSON.parse(new TextDecoder().decode(bytes));
 }
-
 async function resolveState() {
   let fromHash = null;
   const m = location.hash.match(/^#s=(.+)$/);
   if (m) {
-    try { fromHash = decodeHash(m[1]); } catch { toast("That link’s view couldn’t be read."); }
+    try { fromHash = decodeHash(m[1]); } catch { toast("Link view could not be read"); }
     history.replaceState(null, "", location.pathname + location.search);
   }
   let local = null;
@@ -606,7 +742,7 @@ async function resolveState() {
   if (local) { applyState(local); return; }
   try {
     const r = await fetch(`${base}/view.json`, { cache: "no-cache" });
-    if (r.ok) { applyState(await r.json()); toast("Loaded shared settings from the bucket"); return; }
+    if (r.ok) { applyState(await r.json()); toast("Shared settings loaded from bucket"); return; }
   } catch {}
   applyState(defaultState());
 }
@@ -637,7 +773,7 @@ function afterModelChange(save = true) {
 }
 function syncModelInputs() {
   const m = state.model, a = document.activeElement;
-  const set = (id, v, digits) => { const el = $(id); if (el !== a) el.value = (+v).toFixed(digits); };
+  const set = (id, v, dg) => { const el = $(id); if (el !== a) el.value = (+v).toFixed(dg); };
   set("mx", m.x, 3); set("my", m.y, 3); set("mz", m.z, 3);
   set("mrz", m.rz, 1); set("mrx", m.rx, 2); set("mry", m.ry, 2);
   if ($("mrzR") !== a) $("mrzR").value = wrap180(m.rz);
@@ -652,8 +788,7 @@ $("mrzR").addEventListener("input", () => { state.model.rz = +$("mrzR").value; a
 $("resetModel").onclick = () => { state.model = defaultState().model; applyModel(); };
 
 // ================================================================ sections
-const helpers = new Map(); // section id -> plane outline group
-
+const helpers = new Map();
 function normalOf(s) {
   if (s.type === "h") return new THREE.Vector3(0, 1, 0);
   const t = rad(s.angle);
@@ -665,41 +800,35 @@ function planesOf(s) {
     const h = Math.max(0.005, s.thickness / 2);
     return [new THREE.Plane(n.clone(), -(d - h)), new THREE.Plane(n.clone().negate(), d + h)];
   }
-  // Default keeps below (horizontal) or behind (vertical); flip keeps the other side.
   return s.flip ? [new THREE.Plane(n.clone(), -d)] : [new THREE.Plane(n.clone().negate(), d)];
 }
 function sideLabel(s) {
   if (s.type === "h") return s.flip ? "Showing above" : "Showing below";
-  return s.flip ? "Showing front side" : "Showing back side";
+  return s.flip ? "Showing front" : "Showing back";
 }
-
-function applySections({ moveHelpers = true, skipId = null } = {}) {
+function applySections({ moveHelpers = true, skipId = null, save = true } = {}) {
   material.clippingPlanes = state.sections.filter((s) => s.on).flatMap(planesOf);
   material.needsUpdate = true;
   if (moveHelpers) updateHelpers(skipId);
-  scheduleSave();
+  const on = state.sections.filter((s) => s.on).length;
+  $("secCount").textContent = state.sections.length ? `${on}/${state.sections.length}` : "";
+  if (save) scheduleSave();
 }
-
 function makeHelper() {
   const g = new THREE.Group();
   g.rotation.order = "YXZ";
   const geo = new THREE.PlaneGeometry(1, 1);
-  geo.rotateY(Math.PI / 2); // plane spans local Y/Z; local X is its normal
-  const c = accent();
-  const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.1, side: THREE.DoubleSide, depthWrite: false }));
-  const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: c, transparent: true, opacity: 0.6 }));
+  geo.rotateY(Math.PI / 2);
+  const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.05, side: THREE.DoubleSide, depthWrite: false }));
+  const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6 }));
   g.add(mesh, edges);
   g.userData = { mesh, edges };
   scene.add(g);
   return g;
 }
-function refBox() {
-  return worldBox || new THREE.Box3(new THREE.Vector3(-2, -1, -4), new THREE.Vector3(2, 2, 0));
-}
+function refBox() { return worldBox || new THREE.Box3(new THREE.Vector3(-2, -1, -4), new THREE.Vector3(2, 2, 0)); }
 function updateHelpers(skipId = null) {
-  for (const [id, g] of helpers) {
-    if (!state.sections.some((s) => s.id === id)) { scene.remove(g); helpers.delete(id); }
-  }
+  for (const [id, g] of helpers) if (!state.sections.some((s) => s.id === id)) { scene.remove(g); helpers.delete(id); }
   const box = refBox();
   const c = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3());
   const span = Math.max(size.x, size.z, 1) * 1.15, tall = Math.max(size.y, 1) * 1.15;
@@ -708,25 +837,22 @@ function updateHelpers(skipId = null) {
     if (!g) { g = makeHelper(); helpers.set(s.id, g); }
     const sel = s.id === selectedId;
     g.visible = showPlanes && (s.on || sel);
-    g.userData.mesh.material.opacity = sel ? 0.1 : 0.04;
-    g.userData.edges.material.opacity = sel ? 0.9 : 0.4;
-    if (s.id === skipId) continue; // being dragged
+    g.userData.mesh.material.opacity = sel ? 0.045 : 0.015;
+    g.userData.edges.material.opacity = sel ? 0.95 : 0.35;
+    if (s.id === skipId) continue;
     const n = normalOf(s);
     g.position.copy(c).addScaledVector(n, s.pos - n.dot(c));
-    if (s.type === "h") g.rotation.set(0, 0, Math.PI / 2);
-    else g.rotation.set(0, rad(s.angle), 0);
+    if (s.type === "h") g.rotation.set(0, 0, Math.PI / 2); else g.rotation.set(0, rad(s.angle), 0);
     const sy = s.type === "h" ? span : tall;
     g.userData.mesh.scale.set(1, sy, span);
     g.userData.edges.scale.set(1, sy, span);
   }
 }
-
 function sectionRange(s) {
   const box = refBox(), n = normalOf(s);
   let lo = Infinity, hi = -Infinity;
   for (const x of [box.min.x, box.max.x]) for (const y of [box.min.y, box.max.y]) for (const z of [box.min.z, box.max.z]) {
-    const d = n.x * x + n.y * y + n.z * z;
-    lo = Math.min(lo, d); hi = Math.max(hi, d);
+    const d = n.x * x + n.y * y + n.z * z; lo = Math.min(lo, d); hi = Math.max(hi, d);
   }
   return [Math.floor((lo - 0.25) * 10) / 10, Math.ceil((hi + 0.25) * 10) / 10];
 }
@@ -739,57 +865,53 @@ function updateSectionRanges() {
     r.min = Math.min(lo, s.pos); r.max = Math.max(hi, s.pos);
   }
 }
-
 function addSection(type) {
   const c = refBox().getCenter(new THREE.Vector3());
   const count = state.sections.filter((s) => s.type === type).length + 1;
-  const s = cleanSection({ type, name: `${type === "h" ? "Horizontal" : "Vertical"} ${count}`, angle: 0 });
+  const s = cleanSection({ type, name: `${type === "h" ? "Horizontal" : "Vertical"} ${count}` });
   s.pos = r4(normalOf(s).dot(c));
   state.sections.push(s);
   selectedId = s.id;
-  renderSections();
-  applySections();
-  attachGizmo();
+  renderSections(); applySections(); attachGizmo();
 }
-
 function renderSections() {
   const list = $("sectionList");
   list.innerHTML = "";
   if (!state.sections.length) {
-    list.innerHTML = `<p class="empty-list">No sections yet. Add a horizontal one for a floor plan, or a vertical one for an elevation.</p>`;
+    list.innerHTML = `<p class="empty-list">No sections. Horizontal for a floor plan, vertical for an elevation.</p>`;
     return;
   }
   for (const s of state.sections) list.append(sectionCard(s));
   updateSectionRanges();
 }
-
 function sectionCard(s) {
   const el = document.createElement("div");
   el.className = "sec" + (s.id === selectedId ? " sel" : "") + (s.on ? "" : " off");
   el.dataset.id = s.id;
-  const posLabel = s.type === "h" ? "Height (Z)" : "Offset";
+  const posLabel = s.type === "h" ? "Height Z" : "Offset";
   el.innerHTML = `
     <div class="sec-head">
       <label><input type="checkbox" data-k="on" ${s.on ? "checked" : ""}><span></span></label>
-      <button class="ghost" data-k="view" style="padding:4px 9px">View</button>
+      <button data-k="view">View</button>
       <button class="icon" data-k="remove" aria-label="Remove section">✕</button>
     </div>
-    <div class="field"><label>${posLabel}</label>
-      <input type="range" data-k="posR" step="0.01" min="-5" max="5">
+    <div class="control-label">${posLabel} <span class="note">m</span></div>
+    <div class="slider-num"><input type="range" data-k="posR" step="0.01" min="-5" max="5" aria-label="${posLabel}">
       <input type="number" data-k="pos" step="0.01" aria-label="${posLabel} in metres"></div>
-    ${s.type === "v" ? `<div class="field"><label>Rotation</label>
-      <input type="range" data-k="angleR" min="0" max="360" step="0.5">
+    ${s.type === "v" ? `<div class="control-label">Rotation around Z <span class="note">°</span></div>
+    <div class="slider-num"><input type="range" data-k="angleR" min="0" max="360" step="0.5" aria-label="Rotation">
       <input type="number" data-k="angle" step="0.5" aria-label="Rotation around Z in degrees"></div>` : ""}
-    <div class="sec-opts">
-      <div class="seg" role="group" aria-label="Section type">
+    <div class="control-label">Mode</div>
+    <div class="grid2">
+      <div class="seg" role="group" aria-label="Section mode">
         <button data-k="cut" aria-pressed="${s.mode === "cut"}">Cut</button>
         <button data-k="slice" aria-pressed="${s.mode === "slice"}">Slice</button>
       </div>
       ${s.mode === "cut"
-        ? `<button class="ghost" data-k="flip" style="padding:5px 10px">Flip</button><span class="side">${sideLabel(s)}</span>`
-        : `<span class="side">Thickness</span><input type="number" data-k="thickness" step="0.01" min="0.01" style="width:5em" aria-label="Slice thickness in metres"><span class="side">m</span>`}
+        ? `<button data-k="flip" title="Swap which side is shown">Flip · <span class="side" data-k="sideTxt">${sideLabel(s)}</span></button>`
+        : `<div class="slider-num" style="grid-template-columns:1fr auto"><input type="number" data-k="thickness" step="0.01" min="0.01" aria-label="Slice thickness in metres"><span class="side">m thick</span></div>`}
     </div>`;
-  el.querySelector(".sec-head span").textContent = s.name;
+  el.querySelector(".sec-head label span").textContent = s.name;
   const q = (k) => el.querySelector(`[data-k=${k}]`);
   q("posR").value = s.pos; q("pos").value = s.pos.toFixed(3);
   if (s.type === "v") { q("angleR").value = wrap360(s.angle); q("angle").value = s.angle.toFixed(1); }
@@ -814,11 +936,10 @@ function sectionCard(s) {
   }
   q("cut").addEventListener("click", () => { s.mode = "cut"; renderSections(); applySections(); });
   q("slice").addEventListener("click", () => { s.mode = "slice"; renderSections(); applySections(); });
-  if (s.mode === "cut") q("flip").addEventListener("click", () => { s.flip = !s.flip; el.querySelector(".side").textContent = sideLabel(s); applySections(); });
+  if (s.mode === "cut") q("flip").addEventListener("click", () => { s.flip = !s.flip; q("sideTxt").textContent = sideLabel(s); applySections(); });
   else q("thickness").addEventListener("input", () => { const v = parseFloat(q("thickness").value); if (v > 0) { s.thickness = v; applySections(); } });
   return el;
 }
-
 function syncSectionCard(s) {
   const el = document.querySelector(`.sec[data-id="${s.id}"]`);
   if (!el) return;
@@ -826,30 +947,25 @@ function syncSectionCard(s) {
   q("posR").value = s.pos; q("pos").value = s.pos.toFixed(3);
   if (s.type === "v") { q("angleR").value = wrap360(s.angle); q("angle").value = s.angle.toFixed(1); }
 }
-
 function selectSection(id) {
   if (selectedId === id) return;
   selectedId = id;
   document.querySelectorAll(".sec").forEach((el) => el.classList.toggle("sel", +el.dataset.id === id));
-  updateHelpers();
-  attachGizmo();
+  updateHelpers(); attachGizmo();
 }
-
 function lookAtSection(s) {
   const g = helpers.get(s.id);
   if (!g) return;
   const P = g.position.clone(), n = normalOf(s);
-  // Stand on the removed side and look at the cut face.
   const toward = s.mode === "slice" ? n.clone() : (s.flip ? n.clone().negate() : n.clone());
   const size = refBox().getSize(new THREE.Vector3());
   const dist = Math.max(2, Math.max(size.x, size.y, size.z) * 1.1);
   camera.position.copy(P).addScaledVector(toward, dist);
-  if (s.type === "h") camera.position.z += dist * 0.001; // keep "north" (+Y) at the top of the screen
+  if (s.type === "h") camera.position.z += dist * 0.001;
   controls.target.copy(P);
   controls.update();
   saveCamera();
 }
-
 $("addH").onclick = () => addSection("h");
 $("addV").onclick = () => addSection("v");
 $("showPlanes").onchange = () => { showPlanes = $("showPlanes").checked; updateHelpers(); attachGizmo(); };
@@ -862,12 +978,10 @@ function setGizmoMode(m) {
   attachGizmo();
 }
 document.querySelectorAll("[data-gizmo]").forEach((b) => (b.onclick = () => setGizmoMode(b.dataset.gizmo)));
-
 function attachGizmo() {
   gizmo.detach();
   if (activeTab === "model" && pointCount) {
-    gizmo.setSpace("world");
-    gizmo.setMode(gizmoMode);
+    gizmo.setSpace("world"); gizmo.setMode(gizmoMode);
     gizmo.showX = gizmo.showY = gizmo.showZ = true;
     gizmo.attach(modelGroup);
   } else if (activeTab === "sections" && showPlanes) {
@@ -876,23 +990,14 @@ function attachGizmo() {
     if (!g) return;
     g.visible = true;
     const mode = s.type === "h" ? "translate" : gizmoMode;
-    gizmo.setSpace("local");
-    gizmo.setMode(mode);
-    // Move only along the plane's normal (local X); rotate only around the vertical axis.
-    gizmo.showX = mode === "translate";
-    gizmo.showY = mode === "rotate";
-    gizmo.showZ = false;
+    gizmo.setSpace("local"); gizmo.setMode(mode);
+    gizmo.showX = mode === "translate"; gizmo.showY = mode === "rotate"; gizmo.showZ = false;
     gizmo.attach(g);
   }
 }
-
 function onGizmoChange() {
   const obj = gizmo.object;
-  if (obj === modelGroup) {
-    readModelFromGroup();
-    afterModelChange();
-    return;
-  }
+  if (obj === modelGroup) { readModelFromGroup(); afterModelChange(); return; }
   const s = state.sections.find((x) => helpers.get(x.id) === obj);
   if (!s) return;
   if (s.type === "v") s.angle = Math.round(wrap360(deg(obj.rotation.y)) * 10) / 10;
@@ -901,20 +1006,12 @@ function onGizmoChange() {
   applySections({ skipId: s.id });
 }
 
-addEventListener("keydown", (e) => {
-  if (e.target.closest("input, select, textarea")) return;
-  if (e.key === "w" || e.key === "W") setGizmoMode("translate");
-  if (e.key === "e" || e.key === "E") setGizmoMode("rotate");
-});
-
 // ================================================================ views
 function renderViews() {
   const ul = $("viewList");
   ul.innerHTML = "";
-  if (!state.views.length) {
-    ul.innerHTML = `<li><span class="empty-list" style="margin:8px 0">No saved views yet.</span></li>`;
-    return;
-  }
+  $("viewCount").textContent = state.views.length ? String(state.views.length) : "";
+  if (!state.views.length) { ul.innerHTML = `<li><span class="empty-list" style="margin:10px 0">No saved views.</span></li>`; return; }
   state.views.forEach((v, i) => {
     const li = document.createElement("li");
     const apply = Object.assign(document.createElement("button"), { className: "apply", textContent: v.name });
@@ -923,8 +1020,7 @@ function renderViews() {
       selectedId = state.sections[0]?.id ?? null;
       renderSections(); applySections();
       if (v.camera) { camera.position.fromArray(v.camera.p); controls.target.fromArray(v.camera.t); controls.update(); saveCamera(); }
-      attachGizmo();
-      toast(`Showing “${v.name}”`);
+      attachGizmo(); toast(`View: ${v.name}`);
     };
     const del = Object.assign(document.createElement("button"), { className: "icon", textContent: "✕" });
     del.setAttribute("aria-label", `Delete view ${v.name}`);
@@ -936,92 +1032,66 @@ function renderViews() {
 $("saveView").onclick = () => {
   const name = $("viewName").value.trim() || `View ${state.views.length + 1}`;
   const v = { name, ...snapshotView() };
-  const existing = state.views.findIndex((x) => x.name === name);
-  if (existing >= 0) state.views[existing] = v; else state.views.push(v);
+  const i = state.views.findIndex((x) => x.name === name);
+  if (i >= 0) state.views[i] = v; else state.views.push(v);
   $("viewName").value = "";
-  renderViews(); scheduleSave();
-  toast(existing >= 0 ? `Updated “${name}”` : `Saved “${name}”`);
+  renderViews(); scheduleSave(); toast(i >= 0 ? `Updated ${name}` : `Saved ${name}`);
 };
 $("viewName").onkeydown = (e) => { if (e.key === "Enter") $("saveView").click(); };
-
 $("copyLink").onclick = async () => {
-  const v = snapshotView();
-  const payload = { model: state.model, display: state.display, ...v };
+  const payload = { model: state.model, display: state.display, ...snapshotView() };
   const url = `${location.origin}${location.pathname}?bucket=${encodeURIComponent(base)}#s=${encodeHash(payload)}`;
-  try { await navigator.clipboard.writeText(url); toast("Link copied"); }
-  catch { prompt("Copy this link:", url); }
+  try { await navigator.clipboard.writeText(url); toast("Link copied"); } catch { prompt("Copy this link:", url); }
 };
 $("download").onclick = () => {
   saveCamera();
-  const data = { ...state, sections: sectionsForSave(), saved: new Date().toISOString() };
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
-  a.download = "view.json";
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  downloadBlob(new Blob([JSON.stringify({ ...state, sections: sectionsForSave(), saved: new Date().toISOString() }, null, 2)], { type: "application/json" }), "view.json");
 };
 $("upload").onclick = () => $("uploadFile").click();
 $("uploadFile").onchange = async () => {
   const file = $("uploadFile").files[0];
   if (!file) return;
-  try {
-    applyState(JSON.parse(await file.text()));
-    if (shown) buildCloud(shown);
-    scheduleSave();
-    toast("Settings loaded");
-  } catch { toast("That file couldn’t be read as settings."); }
+  try { applyState(JSON.parse(await file.text())); if (shown) buildCloud(shown); scheduleSave(); toast("Settings loaded"); }
+  catch { toast("Not a settings file"); }
   $("uploadFile").value = "";
 };
 
-// ================================================================ display
+// ================================================================ appearance
 function applyDisplay() {
   const d = state.display;
   material.size = d.size;
   $("size").value = d.size; $("sizeOut").textContent = d.size;
   $("range").value = d.range; $("rangeOut").textContent = (+d.range).toFixed(1) + " m";
   $("mode").value = d.mode;
+  $("showGrid").checked = d.grid !== false; grid.visible = d.grid !== false;
 }
 $("size").oninput = () => { state.display.size = +$("size").value; applyDisplay(); scheduleSave(); };
 $("range").oninput = () => { state.display.range = +$("range").value; applyDisplay(); if (shown) buildCloud(shown); scheduleSave(); };
 $("mode").onchange = () => { state.display.mode = $("mode").value; if (shown) buildCloud(shown); scheduleSave(); };
-$("resetView").onclick = frameCloud;
+$("showGrid").onchange = () => { state.display.grid = $("showGrid").checked; applyDisplay(); scheduleSave(); };
+$("fitView").onclick = frameCloud;
 
-$("savePly").onclick = () => {
-  // Export what's visible: aligned, sectioned, in Z-up coordinates.
-  modelGroup.updateMatrixWorld(true);
-  const n = pointCount, pos = geometry.attributes.position.array, col = geometry.attributes.color.array;
-  const planes = material.clippingPlanes || [];
-  const v = new THREE.Vector3(), m = modelGroup.matrixWorld;
-  const b = (x) => Math.round(255 * (x <= 0.0031308 ? x * 12.92 : 1.055 * Math.pow(x, 1 / 2.4) - 0.055));
-  const rows = [];
-  for (let i = 0; i < n * 3; i += 3) {
-    v.set(pos[i], pos[i + 1], pos[i + 2]).applyMatrix4(m);
-    if (planes.some((p) => p.distanceToPoint(v) < 0)) continue;
-    rows.push(`${v.x.toFixed(4)} ${(-v.z).toFixed(4)} ${v.y.toFixed(4)} ${b(col[i])} ${b(col[i + 1])} ${b(col[i + 2])}`);
-  }
-  const head = ["ply", "format ascii 1.0", `element vertex ${rows.length}`, "property float x", "property float y", "property float z",
-    "property uchar red", "property uchar green", "property uchar blue", "end_header"];
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([head.concat(rows).join("\n")], { type: "text/plain" }));
-  a.download = snaps[current].key.split("/").pop().replace(".odp", ".ply");
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-};
-
-// ================================================================ tabs & panel
-document.querySelectorAll("[role=tab]").forEach((t) => {
-  t.onclick = () => {
-    activeTab = t.dataset.tab;
-    document.querySelectorAll("[role=tab]").forEach((x) => x.setAttribute("aria-selected", String(x === t)));
-    document.querySelectorAll(".pane").forEach((p) => (p.hidden = p.dataset.pane !== activeTab));
+// ================================================================ accordion
+document.querySelectorAll(".inspector-section").forEach((sec) => {
+  const head = sec.querySelector(".section-heading"), body = sec.querySelector(".section-body");
+  head.onclick = () => {
+    const open = head.getAttribute("aria-expanded") !== "true";
+    document.querySelectorAll(".inspector-section").forEach((o) => {
+      o.querySelector(".section-heading").setAttribute("aria-expanded", "false");
+      o.querySelector(".section-body").hidden = true;
+    });
+    head.setAttribute("aria-expanded", String(open));
+    body.hidden = !open;
+    activeTab = open ? sec.dataset.sec : null;
     attachGizmo();
   };
 });
-$("toggle").onclick = () => {
-  const collapsed = $("panel").classList.toggle("collapsed");
-  $("toggle").textContent = collapsed ? "Show" : "Hide";
-  $("toggle").setAttribute("aria-expanded", String(!collapsed));
-};
+function openSection(name) {
+  const head = document.querySelector(`.inspector-section[data-sec=${name}] .section-heading`);
+  if (head.getAttribute("aria-expanded") !== "true") head.click();
+}
+
+// ================================================================ ui helpers
 let toastTimer;
 function toast(msg) {
   $("toast").textContent = msg;
@@ -1029,33 +1099,40 @@ function toast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => $("toast").classList.remove("show"), 2200);
 }
-function showTab(name) { document.querySelector(`[role=tab][data-tab=${name}]`).click(); }
+function setStatus(text, isError = false) {
+  $("statusMessage").textContent = text;
+  $("statusMessage").classList.toggle("err", isError);
+}
+function downloadBlob(blob, name) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+const stamp = (t) => { const d = new Date(t * 1000), p = (x) => String(x).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`; };
 
 // ================================================================ bucket & timeline
 let snaps = [], current = -1, shown = null, playing = null;
 const cache = new Map();
-
-function setStatus(text, isError = false) {
-  $("status").textContent = text;
-  $("status").classList.toggle("err", isError);
-}
 function getFrame(key) {
   if (cache.has(key)) { const p = cache.get(key); cache.delete(key); cache.set(key, p); return p; }
   const snap = snaps.find((s) => s.key === key);
   const depthP = fetch(`${base}/${key}`).then((r) => {
-    if (!r.ok) throw new Error(`Snapshot missing from bucket (HTTP ${r.status}). It may have just been thinned out.`);
+    if (!r.ok) throw new Error(`Snapshot missing (HTTP ${r.status}); it may have been thinned out`);
     return r.arrayBuffer();
   }).then(decode);
   const colorP = snap && snap.color ? loadColor(`${base}/${snap.color}`).catch(() => null) : Promise.resolve(null);
   const p = Promise.all([depthP, colorP]).then(([f, c]) => (c ? Object.assign(f, c) : f));
   p.catch(() => cache.delete(key));
   cache.set(key, p);
-  while (cache.size > 8) cache.delete(cache.keys().next().value); // full-resolution frames are large
+  while (cache.size > 8) cache.delete(cache.keys().next().value);
   return p;
 }
-
-const fmtWhen = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-const fmtDay = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" });
+const fmtDay = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" });
+const fmtYear = new Intl.DateTimeFormat("en-GB", { year: "numeric" });
+const fmtTime = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit" });
+const fmtFull = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 function ago(sec) {
   const m = Math.round(sec / 60);
   if (m < 1) return "just now";
@@ -1072,35 +1149,98 @@ function tierFor(ageSec) {
   return "weekly snapshot";
 }
 
+function renderTimeline() {
+  const box = $("ticks");
+  box.innerHTML = "";
+  const n = snaps.length;
+  let lastLabelPct = -100, lastDay = "";
+  snaps.forEach((s, i) => {
+    const pct = n > 1 ? (i / (n - 1)) * 100 : 50;
+    const day = fmtDay.format(new Date(s.t * 1000));
+    const t = document.createElement("div");
+    t.className = "tick" + (day !== lastDay ? " day" : "") + (i === 0 && n > 1 ? " first" : "");
+    t.style.left = pct + "%";
+    t.innerHTML = `<div class="mark"></div>`;
+    if (day !== lastDay && pct - lastLabelPct > 14) {
+      const l = document.createElement("div"); l.className = "lbl"; l.textContent = day; t.append(l);
+      lastLabelPct = pct;
+    }
+    lastDay = day;
+    box.append(t);
+  });
+  $("track").setAttribute("aria-valuemax", String(Math.max(0, n - 1)));
+}
+function markActive(i) {
+  const ticks = $("ticks").children;
+  for (let k = 0; k < ticks.length; k++) ticks[k].classList.toggle("active", k === i);
+  const act = ticks[i];
+  if (act && !act.querySelector(".lbl.now")) {
+    $("ticks").querySelectorAll(".lbl.now").forEach((l) => l.remove());
+    const l = document.createElement("div"); l.className = "lbl now"; l.textContent = fmtTime.format(new Date(snaps[i].t * 1000));
+    l.style.position = "absolute"; l.style.top = "-18px";
+    act.append(l);
+  }
+  $("track").setAttribute("aria-valuenow", String(i));
+  $("track").setAttribute("aria-valuetext", fmtFull.format(new Date(snaps[i].t * 1000)));
+}
+(() => {
+  const track = $("track");
+  const pick = (e) => {
+    const r = track.getBoundingClientRect();
+    const x = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+    const i = Math.round(x * (snaps.length - 1));
+    if (i !== current) { stopPlay(); show(i); }
+  };
+  track.addEventListener("pointerdown", (e) => { if (!snaps.length) return; track.setPointerCapture(e.pointerId); pick(e); });
+  track.addEventListener("pointermove", (e) => { if (track.hasPointerCapture(e.pointerId)) pick(e); });
+})();
+
 async function show(i) {
   if (!snaps.length) return;
   i = Math.max(0, Math.min(snaps.length - 1, i));
   current = i;
   const s = snaps[i];
-  $("slider").value = i;
-  $("when").textContent = fmtWhen.format(new Date(s.t * 1000));
+  const d = new Date(s.t * 1000);
+  $("title").innerHTML = `${fmtDay.format(d)}<br>${fmtTime.format(d)}`;
   const age = Date.now() / 1000 - s.t;
-  $("sub").innerHTML = "";
-  $("sub").append(`${ago(age)}, `, Object.assign(document.createElement("span"), { className: "tier", textContent: tierFor(age) }));
+  $("subtitle").textContent = `${fmtYear.format(d)} · ${ago(age)} · ${tierFor(age)} · ${i + 1} of ${snaps.length}`;
+  markActive(i);
   $("prev").disabled = i === 0;
-  $("next").disabled = i === snaps.length - 1;
-  $("latest").disabled = i === snaps.length - 1;
+  $("next").disabled = $("latest").disabled = i === snaps.length - 1;
   try {
     const f = await getFrame(s.key);
     if (current !== i) return;
     shown = f;
     const n = buildCloud(f);
-    $("empty").classList.add("hidden");
-    $("savePly").disabled = false;
-    setStatus(`${n.toLocaleString()} points, ${f.w}×${f.h} depth${f.rgb ? " with colour" : ", no colour photo"}`);
+    $("empty").hidden = true;
+    ["lazQuick", "lazOne", "mp4Quick", "mp4", "png", "pngTop", "lazZip"].forEach((id) => ($(id).disabled = false));
+    $("dot").className = "status-dot live";
+    $("viewerStatus").textContent = `${n.toLocaleString("en-GB")} pts · ${f.w}×${f.h}${f.rgb ? " · rgb" : " · no colour"}`;
+    setStatus(`Snapshot ${fmtFull.format(d)}`);
     updateHelpers(); updateSectionRanges();
     if (needFraming) { needFraming = false; frameCloud(); }
     attachGizmo();
-    if (i + 1 < snaps.length) getFrame(snaps[i + 1].key).catch(() => {});
-    if (i > 0) getFrame(snaps[i - 1].key).catch(() => {});
+    if (!exporting) {
+      if (i + 1 < snaps.length) getFrame(snaps[i + 1].key).catch(() => {});
+      if (i > 0) getFrame(snaps[i - 1].key).catch(() => {});
+    }
   } catch (err) {
     setStatus(err.message, true);
+    $("dot").className = "status-dot err";
   }
+}
+
+function fillRangeSelects() {
+  const opts = snaps.map((s, i) => `<option value="${i}">${fmtFull.format(new Date(s.t * 1000))}</option>`).join("");
+  const a = +$("rangeFrom").value || 0, b = $("rangeTo").value === "" ? snaps.length - 1 : +$("rangeTo").value;
+  $("rangeFrom").innerHTML = opts; $("rangeTo").innerHTML = opts;
+  $("rangeFrom").value = Math.min(a, snaps.length - 1);
+  $("rangeTo").value = Math.min(Math.max(b, 0), snaps.length - 1);
+}
+function rangeIdx() {
+  let a = +$("rangeFrom").value, b = +$("rangeTo").value;
+  if (a > b) [a, b] = [b, a];
+  return Array.from({ length: b - a + 1 }, (_, k) => a + k);
 }
 
 async function loadIndex({ quiet = false } = {}) {
@@ -1110,66 +1250,394 @@ async function loadIndex({ quiet = false } = {}) {
     const doc = await r.json();
     const wasLatest = current === snaps.length - 1;
     const prevKey = snaps[current]?.key;
+    const wasAtEnd = $("rangeTo").value === "" || +$("rangeTo").value === snaps.length - 1;
     snaps = doc.snapshots || [];
-    if (!snaps.length) { setStatus("The bucket has no snapshots yet. Start the snapshotter on the camera PC.", true); return; }
+    if (!snaps.length) { setStatus("Bucket has no snapshots yet", true); return; }
     $("timeline").hidden = false;
-    $("slider").max = snaps.length - 1;
-    $("oldest").textContent = fmtDay.format(new Date(snaps[0].t * 1000));
-    $("count").textContent = `${snaps.length.toLocaleString()} snapshots`;
+    renderTimeline();
+    fillRangeSelects();
+    if (wasAtEnd) $("rangeTo").value = snaps.length - 1;
     if (current < 0 || wasLatest || current >= snaps.length) show(snaps.length - 1);
     else {
       const same = snaps.findIndex((s) => s.key === prevKey);
-      if (same >= 0) { current = same; $("slider").value = same; }
-      else show(Math.min(current, snaps.length - 1));
+      if (same >= 0) { current = same; markActive(same); } else show(Math.min(current, snaps.length - 1));
     }
   } catch {
     if (quiet) return;
-    setStatus("Couldn’t load index.json from that address. Check the bucket’s public URL and its CORS rule (see the README).", true);
-    showTab("bucket");
+    setStatus("Could not load index.json · check URL and CORS", true);
+    $("dot").className = "status-dot err";
+    $("viewerStatus").textContent = "Bucket not reachable";
+    openSection("bucket");
   }
 }
-
 async function load() {
   base = $("bucket").value.trim().replace(/\/+$/, "");
   if (!base) return;
   if (!/^https?:\/\//.test(base)) base = "https://" + base;
   try { localStorage.setItem("orbbec-bucket", base); } catch {}
+  $("bucketName").textContent = "R2 · " + base.replace(/^https?:\/\//, "").replace(/\.r2\.dev$/, "").slice(0, 16) + "…";
   cache.clear(); snaps = []; current = -1; shown = null;
   setStatus("Loading…");
   await resolveState();
   loadIndex();
 }
 
-function stopPlay() { clearInterval(playing); playing = null; $("play").textContent = "Play"; }
+function setPlayIcon(p) {
+  $("playIcon").innerHTML = p ? `<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>` : `<polygon points="6 3 20 12 6 21 6 3"/>`;
+}
+function stopPlay() { clearInterval(playing); playing = null; setPlayIcon(false); }
 function togglePlay() {
   if (playing) return stopPlay();
   if (current >= snaps.length - 1) show(0);
-  $("play").textContent = "Pause";
+  setPlayIcon(true);
   playing = setInterval(() => { if (current >= snaps.length - 1) return stopPlay(); show(current + 1); }, 450);
 }
-
-const params = new URLSearchParams(location.search);
-let savedBucket = null;
-try { savedBucket = localStorage.getItem("orbbec-bucket"); } catch {}
-$("bucket").value = params.get("bucket") || savedBucket || "";
-
-$("load").onclick = load;
-$("bucket").onkeydown = (e) => { if (e.key === "Enter") load(); };
-$("slider").oninput = () => { stopPlay(); show(+$("slider").value); };
 $("prev").onclick = () => { stopPlay(); show(current - 1); };
 $("next").onclick = () => { stopPlay(); show(current + 1); };
 $("latest").onclick = () => { stopPlay(); show(snaps.length - 1); };
 $("play").onclick = togglePlay;
+$("load").onclick = load;
+$("bucket").onkeydown = (e) => { if (e.key === "Enter") load(); };
 addEventListener("keydown", (e) => {
-  if (e.target.closest("input, select, textarea")) return;
+  if (exporting || e.target.closest("input, select, textarea")) return;
   if (e.key === "ArrowLeft") { stopPlay(); show(current - 1); }
-  if (e.key === "ArrowRight") { stopPlay(); show(current + 1); }
-  if (e.key === " " && snaps.length) { e.preventDefault(); togglePlay(); }
+  else if (e.key === "ArrowRight") { stopPlay(); show(current + 1); }
+  else if (e.key === " " && snaps.length) { e.preventDefault(); togglePlay(); }
+  else if (e.key === "w" || e.key === "W") setGizmoMode("translate");
+  else if (e.key === "e" || e.key === "E") setGizmoMode("rotate");
 });
-setInterval(() => { if (base && !playing) loadIndex({ quiet: true }); }, 60000);
+setInterval(() => { if (base && !playing && !exporting) loadIndex({ quiet: true }); }, 60000);
 
+// ================================================================ export: shared
+function collectPoints(applySectionsToo) {
+  modelGroup.updateMatrixWorld(true);
+  const n = pointCount, pos = geometry.attributes.position.array, col = geometry.attributes.color.array;
+  const planes = applySectionsToo ? material.clippingPlanes || [] : [];
+  const m = modelGroup.matrixWorld.elements;
+  const xyz = new Float64Array(n * 3), rgb = new Uint8Array(n * 3);
+  let k = 0;
+  for (let i = 0; i < n * 3; i += 3) {
+    const x = pos[i], y = pos[i + 1], z = pos[i + 2];
+    const wx = m[0] * x + m[4] * y + m[8] * z + m[12];
+    const wy = m[1] * x + m[5] * y + m[9] * z + m[13];
+    const wz = m[2] * x + m[6] * y + m[10] * z + m[14];
+    let keep = true;
+    for (const p of planes) if (p.normal.x * wx + p.normal.y * wy + p.normal.z * wz + p.constant < 0) { keep = false; break; }
+    if (!keep) continue;
+    const o = k * 3;
+    xyz[o] = wx; xyz[o + 1] = -wz; xyz[o + 2] = wy;          // Z-up
+    rgb[o] = toSrgb8(col[i]); rgb[o + 1] = toSrgb8(col[i + 1]); rgb[o + 2] = toSrgb8(col[i + 2]);
+    k++;
+  }
+  return { xyz, rgb, n: k };
+}
+
+// ================================================================ export: LAZ
+let lazWriter = null;
+async function getLazWriter() {
+  if (lazWriter) return lazWriter;
+  const bytes = Uint8Array.from(atob(window.LAZ_WASM_B64), (c) => c.charCodeAt(0));
+  const stub = () => 0;
+  const { instance } = await WebAssembly.instantiate(bytes, {
+    wasi_snapshot_preview1: { fd_close: stub, fd_seek: stub, fd_write: stub, proc_exit: stub },
+  });
+  const ex = instance.exports;
+  ex._initialize && ex._initialize();
+  const CHUNK = 50000, REC = 26;
+  lazWriter = (xyz, rgb, n, label) => {
+    let min = [Infinity, Infinity, Infinity], max = [-Infinity, -Infinity, -Infinity];
+    for (let i = 0; i < n * 3; i += 3) for (let a = 0; a < 3; a++) { const v = xyz[i + a]; if (v < min[a]) min[a] = v; if (v > max[a]) max[a] = v; }
+    if (!n) { min = [0, 0, 0]; max = [0, 0, 0]; }
+    const scale = 0.0005, off = min.map((v) => Math.floor(v));
+    ex.lz_reset();
+    const bufPtr = ex.lz_malloc(CHUNK * REC);
+    const sizes = [];
+    for (let start = 0; start < n; start += CHUNK) {
+      const cnt = Math.min(CHUNK, n - start);
+      const view = new DataView(ex.memory.buffer, bufPtr, cnt * REC);
+      for (let q = 0; q < cnt; q++) {
+        const i = (start + q) * 3, o = q * REC;
+        view.setInt32(o, Math.round((xyz[i] - off[0]) / scale), true);
+        view.setInt32(o + 4, Math.round((xyz[i + 1] - off[1]) / scale), true);
+        view.setInt32(o + 8, Math.round((xyz[i + 2] - off[2]) / scale), true);
+        view.setUint16(o + 12, 0, true); view.setUint8(o + 14, 0x09); view.setUint8(o + 15, 1);
+        view.setInt8(o + 16, 0); view.setUint8(o + 17, 0); view.setUint16(o + 18, 0, true);
+        view.setUint16(o + 20, rgb[i] * 257, true); view.setUint16(o + 22, rgb[i + 1] * 257, true); view.setUint16(o + 24, rgb[i + 2] * 257, true);
+      }
+      sizes.push(ex.lz_chunk(bufPtr, cnt));
+    }
+    ex.lz_free(bufPtr);
+    const pointBytes = new Uint8Array(ex.memory.buffer, ex.lz_out_ptr(), ex.lz_out_len()).slice();
+    const sp = ex.lz_malloc(Math.max(4, sizes.length * 4));
+    new Uint32Array(ex.memory.buffer, sp, sizes.length).set(sizes);
+    const tlen = ex.lz_table(sp, sizes.length);
+    const table = new Uint8Array(ex.memory.buffer, ex.lz_table_ptr(), tlen).slice();
+    ex.lz_free(sp);
+    const vlen = ex.lz_vlr(2, CHUNK);
+    const vlr = new Uint8Array(ex.memory.buffer, ex.lz_vlr_ptr(), vlen).slice();
+    ex.lz_reset();
+
+    const HDR = 227, VLRH = 54, pointStart = HDR + VLRH + vlr.length;
+    const tableOffset = pointStart + 8 + pointBytes.length;
+    const out = new Uint8Array(tableOffset + 8 + table.length), dv = new DataView(out.buffer);
+    const str = (p, s, len) => { for (let i = 0; i < len; i++) out[p + i] = i < s.length ? s.charCodeAt(i) & 0x7f : 0; };
+    str(0, "LASF", 4); out[24] = 1; out[25] = 2;
+    str(26, "Orbbec Astra 2", 32); str(58, label || "Astra 2 archive viewer", 32);
+    const now = new Date(), jan1 = new Date(now.getFullYear(), 0, 1);
+    dv.setUint16(90, Math.floor((now - jan1) / 864e5) + 1, true); dv.setUint16(92, now.getFullYear(), true);
+    dv.setUint16(94, HDR, true); dv.setUint32(96, pointStart, true); dv.setUint32(100, 1, true);
+    out[104] = 2 | 0x80; dv.setUint16(105, REC, true); dv.setUint32(107, n, true); dv.setUint32(111, n, true);
+    for (let a = 0; a < 3; a++) { dv.setFloat64(131 + a * 8, scale, true); dv.setFloat64(155 + a * 8, off[a], true); }
+    for (let a = 0; a < 3; a++) { dv.setFloat64(179 + a * 16, max[a], true); dv.setFloat64(187 + a * 16, min[a], true); }
+    dv.setUint16(HDR, 0, true); str(HDR + 2, "laszip encoded", 16); dv.setUint16(HDR + 18, 22204, true);
+    dv.setUint16(HDR + 20, vlr.length, true); str(HDR + 22, "by laz-perf (WASM)", 32);
+    out.set(vlr, HDR + VLRH);
+    dv.setBigInt64(pointStart, BigInt(tableOffset), true);
+    out.set(pointBytes, pointStart + 8);
+    dv.setUint32(tableOffset, 0, true); dv.setUint32(tableOffset + 4, sizes.length, true);
+    out.set(table, tableOffset + 8);
+    return out;
+  };
+  return lazWriter;
+}
+async function exportLazOne() {
+  if (!shown || exporting) return;
+  setStatus("Compressing LAZ…");
+  await sleep(20);
+  const write = await getLazWriter();
+  const { xyz, rgb, n } = collectPoints($("lazSections").checked);
+  const bytes = write(xyz, rgb, n);
+  downloadBlob(new Blob([bytes], { type: "application/octet-stream" }), `astra2_${stamp(snaps[current].t)}.laz`);
+  setStatus(`LAZ saved · ${n.toLocaleString("en-GB")} points · ${(bytes.length / 1048576).toFixed(1)} MB`);
+}
+$("lazOne").onclick = exportLazOne;
+$("lazQuick").onclick = exportLazOne;
+
+// Minimal ZIP writer (stored: LAZ is already compressed).
+const CRC_TABLE = new Uint32Array(256).map((_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+function crc32(b) { let c = 0xffffffff; for (let i = 0; i < b.length; i++) c = CRC_TABLE[(c ^ b[i]) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+function makeZip(files) {
+  const parts = [], central = [];
+  let offset = 0;
+  for (const f of files) {
+    const name = new TextEncoder().encode(f.name), crc = crc32(f.data), size = f.data.length;
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(8, 0, true);
+    h.setUint32(14, crc, true); h.setUint32(18, size, true); h.setUint32(22, size, true); h.setUint16(26, name.length, true);
+    parts.push(new Uint8Array(h.buffer), name, f.data);
+    const c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true);
+    c.setUint32(16, crc, true); c.setUint32(20, size, true); c.setUint32(24, size, true); c.setUint16(28, name.length, true);
+    c.setUint32(42, offset, true);
+    central.push(new Uint8Array(c.buffer), name);
+    offset += 30 + name.length + size;
+  }
+  const cdSize = central.reduce((s, p) => s + p.length, 0);
+  const e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true);
+  e.setUint32(12, cdSize, true); e.setUint32(16, offset, true);
+  return new Blob([...parts, ...central, new Uint8Array(e.buffer)], { type: "application/zip" });
+}
+$("lazZip").onclick = async () => {
+  if (exporting) return;
+  const idx = rangeIdx();
+  if (idx.length > 60 && !confirm(`${idx.length} snapshots is a large download (roughly ${Math.round(idx.length * 8)} MB). Continue?`)) return;
+  const write = await getLazWriter();
+  beginExport("Packing LAZ", idx.length);
+  const keep = current, files = [];
+  try {
+    for (let k = 0; k < idx.length && !cancelExport; k++) {
+      const i = idx[k];
+      progress(k, idx.length, fmtFull.format(new Date(snaps[i].t * 1000)));
+      const f = await getFrame(snaps[i].key);
+      buildCloud(f);
+      const { xyz, rgb, n } = collectPoints($("lazSections").checked);
+      files.push({ name: `astra2_${stamp(snaps[i].t)}.laz`, data: write(xyz, rgb, n) });
+      await sleep(0);
+    }
+    if (!cancelExport) {
+      progress(idx.length, idx.length, "Writing zip");
+      downloadBlob(makeZip(files), `astra2_${stamp(snaps[idx[0]].t)}_to_${stamp(snaps[idx[idx.length - 1]].t)}.zip`);
+      setStatus(`ZIP saved · ${files.length} LAZ files`);
+    } else setStatus("Export cancelled");
+  } catch (err) { setStatus(err.message, true); }
+  finally { endExport(); show(keep); }
+};
+
+// ================================================================ export: render (PNG & MP4)
+const comp = document.createElement("canvas");
+const cctx = comp.getContext("2d");
+let saved = null;
+function beginOffscreen(w, h) {
+  saved = { pr: renderer.getPixelRatio(), size: material.size, grid: grid.visible };
+  renderer.setAnimationLoop(null);
+  gizmo.visible = false;
+  for (const g of helpers.values()) g.visible = false;
+  const [, vh] = viewSize();
+  material.size = saved.size * (h / vh);
+  renderer.setPixelRatio(1);
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+  comp.width = w; comp.height = h;
+}
+function renderComposite(label) {
+  const w = comp.width, h = comp.height;
+  renderer.render(scene, camera);
+  const g = cctx.createRadialGradient(w / 2, h * 0.35, 0, w / 2, h * 0.35, Math.max(w, h) * 0.75);
+  g.addColorStop(0, "#111111"); g.addColorStop(0.55, "#050505"); g.addColorStop(1, "#000000");
+  cctx.fillStyle = g; cctx.fillRect(0, 0, w, h);
+  cctx.drawImage(renderer.domElement, 0, 0, w, h);
+  if (label) {
+    const pad = Math.round(h * 0.045), big = Math.round(h * 0.06), small = Math.round(h * 0.016);
+    cctx.textBaseline = "alphabetic";
+    cctx.fillStyle = "#8d8d8d";
+    cctx.font = `700 ${small}px "Geist Mono", ui-monospace, monospace`;
+    cctx.fillText(label.eyebrow, pad, h - pad - big * 1.9);
+    cctx.fillStyle = "#ffffff";
+    cctx.font = `800 ${big}px "Geist Mono", ui-monospace, monospace`;
+    cctx.fillText(label.line1, pad, h - pad - big * 0.95);
+    cctx.fillText(label.line2, pad, h - pad);
+  }
+}
+function endOffscreen() {
+  renderer.setPixelRatio(saved.pr);
+  material.size = saved.size;
+  gizmo.visible = true;
+  updateHelpers(); attachGizmo();
+  const [w, h] = viewSize();
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+  renderer.setAnimationLoop(loop);
+}
+function labelFor(i) {
+  const d = new Date(snaps[i].t * 1000);
+  return { eyebrow: "ORBBEC ASTRA 2", line1: fmtDay.format(d).toUpperCase() + " " + fmtYear.format(d), line2: fmtTime.format(d) };
+}
+
+async function exportPng() {
+  if (!shown || exporting) return;
+  const k = +$("pngScale").value, [w, h] = viewSize();
+  await document.fonts.ready;
+  beginOffscreen(Math.round(w * k), Math.round(h * k));
+  try {
+    renderComposite(null);
+    const blob = await new Promise((r) => comp.toBlob(r, "image/png"));
+    downloadBlob(blob, `astra2_${stamp(snaps[current].t)}.png`);
+    setStatus(`PNG saved · ${comp.width}×${comp.height}`);
+  } finally { endOffscreen(); }
+}
+$("png").onclick = exportPng; $("pngTop").onclick = exportPng; $("pngQuick").onclick = exportPng;
+
+function beginExport(title, total) {
+  exporting = true; cancelExport = false; stopPlay();
+  $("renderEyebrow").textContent = title;
+  $("renderOverlay").hidden = false;
+  progress(0, total, "");
+}
+function progress(k, total, note) {
+  $("renderBig").textContent = `${k} / ${total}`;
+  const pct = total ? Math.round((k / total) * 100) : 0;
+  $("renderBar").style.width = pct + "%";
+  $("renderPct").textContent = pct + "%";
+  if (note) $("renderNote").textContent = note;
+}
+function endExport() { exporting = false; $("renderOverlay").hidden = true; }
+$("renderCancel").onclick = () => { cancelExport = true; $("renderNote").textContent = "Cancelling…"; };
+
+let vcam = "fixed";
+document.querySelectorAll("[data-vcam]").forEach((b) => (b.onclick = () => {
+  vcam = b.dataset.vcam;
+  document.querySelectorAll("[data-vcam]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+}));
+
+async function pickCodec(w, h, bitrate, fps) {
+  const avc = h > 1080 ? ["avc1.640033", "avc1.4d0033", "avc1.640034"] : ["avc1.640028", "avc1.4d0028", "avc1.42e028"];
+  for (const codec of avc) {
+    try { if ((await VideoEncoder.isConfigSupported({ codec, width: w, height: h, bitrate, framerate: fps })).supported) return { codec, mux: "avc" }; } catch {}
+  }
+  for (const codec of ["vp09.00.40.08", "vp09.00.50.08"]) {
+    try { if ((await VideoEncoder.isConfigSupported({ codec, width: w, height: h, bitrate, framerate: fps })).supported) return { codec, mux: "vp9" }; } catch {}
+  }
+  return null;
+}
+async function exportMp4() {
+  if (!shown || exporting) return;
+  if (!("VideoEncoder" in window) || !window.Mp4Muxer) {
+    toast("Video export needs Chrome, Edge, Firefox 130+ or Safari 17+");
+    setStatus("This browser cannot encode video", true);
+    return;
+  }
+  const [w, h] = $("vidRes").value.split("x").map(Number);
+  const fps = 30, sps = +$("vidSpeed").value, per = Math.max(1, Math.round(fps / sps));
+  const bitrate = Math.round(w * h * fps * 0.12);
+  const choice = await pickCodec(w, h, bitrate, fps);
+  if (!choice) { toast("No video encoder for this resolution here — try a lower one"); return; }
+  const idx = rangeIdx();
+  const totalFrames = idx.length * per;
+  await document.fonts.ready;
+
+  const muxer = new Mp4Muxer.Muxer({
+    target: new Mp4Muxer.ArrayBufferTarget(),
+    video: { codec: choice.mux, width: w, height: h, frameRate: fps },
+    fastStart: "in-memory",
+  });
+  let encErr = null;
+  const enc = new VideoEncoder({ output: (chunk, meta) => muxer.addVideoChunk(chunk, meta), error: (e) => { encErr = e; } });
+  enc.configure({ codec: choice.codec, width: w, height: h, bitrate, framerate: fps, ...(choice.mux === "avc" ? { avc: { format: "avc" } } : {}) });
+
+  const keep = current;
+  const cam0 = camera.position.clone(), tgt0 = controls.target.clone();
+  beginExport(`Rendering MP4 · ${w}×${h}`, idx.length);
+  beginOffscreen(w, h);
+  let frame = 0;
+  try {
+    for (let k = 0; k < idx.length && !cancelExport; k++) {
+      const i = idx[k];
+      progress(k, idx.length, fmtFull.format(new Date(snaps[i].t * 1000)));
+      const f = await getFrame(snaps[i].key);
+      shown = f; buildCloud(f);
+      const label = $("vidLabel").checked ? labelFor(i) : null;
+      for (let r = 0; r < per; r++) {
+        if (vcam === "orbit") {
+          const a = (frame / totalFrames) * Math.PI * 2;
+          const off = cam0.clone().sub(tgt0).applyAxisAngle(new THREE.Vector3(0, 1, 0), a);
+          camera.position.copy(tgt0).add(off); camera.lookAt(tgt0);
+        }
+        renderComposite(label);
+        const vf = new VideoFrame(comp, { timestamp: Math.round((frame * 1e6) / fps), duration: Math.round(1e6 / fps) });
+        enc.encode(vf, { keyFrame: frame % (fps * 2) === 0 });
+        vf.close();
+        frame++;
+        while (enc.encodeQueueSize > 4) await sleep(4);
+        if (encErr) throw encErr;
+      }
+      await sleep(0);
+    }
+    if (cancelExport) { enc.close(); setStatus("Export cancelled"); return; }
+    progress(idx.length, idx.length, "Finishing file");
+    await enc.flush();
+    muxer.finalize();
+    const buf = muxer.target.buffer;
+    downloadBlob(new Blob([buf], { type: "video/mp4" }), `astra2_timelapse_${stamp(snaps[idx[0]].t)}_to_${stamp(snaps[idx[idx.length - 1]].t)}.mp4`);
+    setStatus(`MP4 saved · ${idx.length} snapshots · ${(frame / fps).toFixed(1)} s · ${(buf.byteLength / 1048576).toFixed(1)} MB`);
+  } catch (err) {
+    setStatus("Video export failed: " + (err.message || err), true);
+    try { enc.close(); } catch {}
+  } finally {
+    camera.position.copy(cam0); controls.target.copy(tgt0); controls.update();
+    endOffscreen(); endExport(); show(keep);
+  }
+}
+$("mp4").onclick = exportMp4;
+$("mp4Quick").onclick = () => { openSection("export"); exportMp4(); };
+
+// ================================================================ start
+const params = new URLSearchParams(location.search);
+let savedBucket = null;
+try { savedBucket = localStorage.getItem("orbbec-bucket"); } catch {}
+$("bucket").value = params.get("bucket") || savedBucket || "";
 applyState(defaultState());
-if ($("bucket").value) load(); else showTab("bucket");
+if ($("bucket").value) load(); else openSection("bucket");
 </script>
 </body>
 </html>

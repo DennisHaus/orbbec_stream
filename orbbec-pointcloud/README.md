@@ -80,6 +80,14 @@ for new snapshots every minute.
 - **Display** — point size, max distance, colours. *Save visible points* exports
   the aligned, sectioned cloud as a coloured .ply (Z-up).
 
+- **Export** — *Download LAZ*: the current snapshot as a LAS 1.2 / LAZ file
+  (point format 2: XYZ + RGB, Z-up, aligned, 0.5 mm precision), optionally with the
+  active sections applied. *Range as ZIP*: one .laz per snapshot between two dates.
+  *MP4*: a time-lapse of the chosen range from the current view or a 360° orbit,
+  at 720p, 1080p or 4K, with an optional date stamp. *PNG*: an image of the view.
+  Everything is made in the browser; nothing is uploaded. Video export needs a
+  recent Chrome, Edge, Safari or Firefox.
+
 Keys: ← → step through time, space plays, W / E switch between move and rotate.
 
 ## Cost
